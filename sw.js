@@ -1,10 +1,10 @@
 /* Funzionamento offline: prima la rete, poi la copia salvata. */
-var CACHE = 'nexmet-v3-3';
+var CACHE = 'nexmet-v3-4';
 var SHELL = [
   './', 'index.html', 'css/app.css', 'manifest.webmanifest', 'icon.svg',
   'img/nexmet-logo.svg', 'img/nexmet-logo-chiaro.svg', 'img/nexmet-mark.svg', 'img/nexmet-mark-chiaro.svg',
   'js/util.js', 'js/config.js', 'js/data.js', 'js/calc.js', 'js/ui.js',
-  'js/views-banco.js', 'js/views-operativo.js', 'js/views-dati.js', 'js/main.js'
+  'js/views-banco.js', 'js/views-operativo.js', 'js/views-dati.js', 'js/views-tabelle.js', 'js/main.js'
 ];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return Promise.all(SHELL.map(function (u) { return c.add(u).catch(function () {}); })); }));
