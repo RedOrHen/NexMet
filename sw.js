@@ -1,8 +1,8 @@
 /* Funzionamento offline: prima la rete, poi la copia salvata. */
-var CACHE = 'nexmet-v2-1';
+var CACHE = 'nexmet-v3-1';
 var SHELL = [
   './', 'index.html', 'css/app.css', 'manifest.webmanifest', 'icon.svg',
-  'js/util.js', 'js/data.js', 'js/calc.js', 'js/ui.js',
+  'js/util.js', 'js/config.js', 'js/data.js', 'js/calc.js', 'js/ui.js',
   'js/views-banco.js', 'js/views-operativo.js', 'js/views-dati.js', 'js/main.js'
 ];
 self.addEventListener('install', function (e) {
@@ -18,7 +18,7 @@ self.addEventListener('fetch', function (e) {
   var req = e.request;
   if (req.method !== 'GET') return;
   var url = new URL(req.url);
-  var ok = url.origin === location.origin || /cdnjs\.cloudflare\.com|fonts\.googleapis\.com|fonts\.gstatic\.com|unpkg\.com/.test(url.host);
+  var ok = url.origin === location.origin || /cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|fonts\.googleapis\.com|fonts\.gstatic\.com|unpkg\.com/.test(url.host);
   if (!ok) return;
   e.respondWith(fetch(req).then(function (res) {
     if (res && (res.ok || res.type === 'opaque')) { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put(req, copy); }); }

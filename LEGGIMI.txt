@@ -1,58 +1,60 @@
-NEXMET MAGAZZINO v2
-===================
+NEXMET MAGAZZINO v2 - con accesso e database
+=============================================
 
-Nuova versione del sito del magazzino, costruita da zero al posto del prototipo
-(cartella "sito-magazzino", che resta com'e').
+Il sito del magazzino ora ha una pagina di accesso e salva tutti i dati su Supabase
+(progetto "NexMet", in Europa). Possono entrare solo le persone autorizzate:
+Redi (Admin) ed Elvinas (sola consultazione, per ora).
 
-COME PROVARLA SUL PC
-1. Apri questa cartella e fai doppio clic su index.html.
-2. Vai in "Dati e backup" e clicca "Carica dati di esempio".
-3. Prova: Banco (cerca "ram"), Pezzi, Carica un lotto, Vendite, Margine, Etichette.
-Da file la fotocamera e il funzionamento offline NON si attivano: servono un
-indirizzo https (per esempio GitHub Pages) oppure localhost.
+COME FUNZIONA LA PROTEZIONE
+- Chi apre il sito vede solo la pagina di accesso. Senza email e password non vede niente.
+- La protezione vera sta nel database, non nella pagina: anche chi aggirasse il sito
+  non puo leggere ne scrivere i dati se non e nell'elenco degli autorizzati.
+- I ruoli li controlla il database: Admin fa tutto e gestisce gli utenti; Modifica inserisce
+  e modifica; Consultazione puo solo vedere. Elvinas non puo modificare nulla.
+- Nel sito c'e solo la chiave PUBBLICA di Supabase (js/config.js). La chiave segreta
+  (sb_secret_...) non va mai scritta nei file del sito.
 
-COSA C'E DI NUOVO RISPETTO AL PROTOTIPO
-- Banco di lavoro: cerchi un pezzo e vedi subito dove sta e quanti ne restano;
-  elenco "Da sistemare" (pezzi da verificare, senza posizione o senza prezzo,
-  dischi da trattare, vendite da spedire).
-- Carico rapido: registri un lotto e tutti i suoi pezzi in una tabella
-  (Invio aggiunge una riga, la posizione si copia dalla riga sopra).
-- Importazione da CSV (modello scaricabile) e dei dati del prototipo (v1).
-- Pannello del pezzo con storico delle modifiche, correzione rapida della
-  quantita, duplicazione, fasi del trattamento dati dei dischi.
-- Azioni multiple: etichette, cambio stato, spostamento, eliminazione.
-- Vendite a pezzo, a peso e per lotto intero; stato delle spedizioni.
-- Margine per lotto e per pezzo, con ripartizione del costo per quantita
-  oppure per valore stimato.
-- Etichette in tre formati (A4 o stampante di etichette), con copie multiple.
-- Scansione con la fotocamera del telefono (da https) o codice scritto a mano.
-- Ricerca ovunque con Ctrl+K, annulla dopo ogni eliminazione, tema chiaro/scuro.
-- Archivio piu capiente (IndexedDB), pensato per molti pezzi.
-- Dati separati dall'interfaccia (js/data.js): in futuro si potra collegare un
-  database con login senza riscrivere le schermate.
+COSA FARE PER ATTIVARE L'ACCESSO (una volta sola, in Supabase)
+1. Authentication > Users > "Add user" > "Create new user": scrivi l'email e scegli la password.
+   Spunta "Auto Confirm User". Fallo per Redi e per Elvinas (ognuno poi puo cambiare la
+   propria password con "Password dimenticata?").
+2. SQL Editor: esegui le due istruzioni "insert into public.nexmet_utenti" in fondo al file
+   supabase/schema.sql, dopo aver sostituito le email. Chi non e in quell'elenco entra ma
+   non vede niente ("Accesso non autorizzato").
+3. Authentication > URL Configuration: come "Site URL" scrivi
+   https://redorhen.github.io/NexMet/ e aggiungilo anche tra i "Redirect URLs"
+   (serve al link della password dimenticata).
+4. Authentication > Sign In / Providers: disattiva "Allow new users to sign up".
+   (Anche se restasse attivo, i nuovi iscritti non vedrebbero niente: contano solo gli
+   utenti dell'elenco. Disattivarlo e una protezione in piu.)
 
-COSA NON C'E ANCORA
-- Pubblicazione su eBay e foto online (fase 2).
-- Login vero: i ruoli Admin / Modifica / Consultazione sono simulati.
-- Dati condivisi tra dispositivi: restano nel browser di chi li inserisce.
+PER AGGIUNGERE UNA PERSONA IN FUTURO
+Crea la sua utenza in Supabase, copia il suo "User UID" e usa Admin > "Autorizza un utente".
 
-ATTENZIONE
-- Usa SOLO dati di esempio finche il sito e pubblico.
-- Scarica spesso il backup da "Dati e backup".
-
-PUBBLICARLA SU GITHUB PAGES
-Carica tutta la cartella (index.html, manifest.webmanifest, icon.svg, sw.js e le
-cartelle css e js) in un repository, poi Settings > Pages > Deploy from a branch.
-Se la pubblichi sullo stesso account del prototipo, i due siti condividono lo
-stesso spazio dati del browser: per questo c'e il pulsante di importazione v1.
+I DATI
+- Ogni campo ha la sua colonna nel database: lotti, pezzi, vendite, rubrica, registro delle
+  attivita. Ogni tabella ha anche una colonna "extra" che conserva i campi che aggiungeremo
+  al sito in futuro: nessun dato inserito va perso.
+- I collegamenti sono controllati dal database: eliminando un lotto i suoi pezzi restano senza
+  lotto; eliminando un pezzo spariscono le sue vendite; un codice interno doppio o una
+  quantita negativa vengono rifiutati.
+- Le foto restano sul PC di Redi: nel database c'e solo il percorso.
+- Il piano gratuito di Supabase non fa backup automatici e puo mettere in pausa il progetto
+  dopo un periodo di inattivita: scarica ogni tanto il backup da "Dati e backup".
 
 FILE
 index.html          pagina e regole di sicurezza
 css/app.css         aspetto
-js/util.js          funzioni di servizio
-js/data.js          archivio dei dati
+js/config.js        indirizzo e chiave PUBBLICA del progetto Supabase
+js/data.js          scambio dei dati con il database (campo per colonna)
 js/calc.js          calcoli di giacenza e margine
 js/ui.js            finestre, moduli, ricerca rapida
 js/views-*.js       le schermate
-js/main.js          avvio e navigazione
-sw.js               funzionamento offline
+js/main.js          avvio, accesso e navigazione
+sw.js               funzionamento offline della pagina
+supabase/schema.sql tabelle e regole del database (da eseguire in Supabase)
+supabase/collaudo_regole.sql  prova delle regole di accesso (non lascia tracce)
+
+PROVARLO SUL PC
+Apri index.html con un doppio clic: compare la pagina di accesso (serve internet). La
+fotocamera e il funzionamento offline si attivano solo da un indirizzo https.
