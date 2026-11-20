@@ -107,6 +107,13 @@ code, .code { font-family: var(--f-head); font-stretch: 100%; font-weight: 600; 
 .rail a.nav:hover { background: var(--accent-soft); color: var(--ink); }
 .rail a.nav[aria-current="page"] { background: var(--ink); color: var(--bench); }
 .rail a.nav svg, .tabbar svg { width: 20px; height: 20px; flex: none; }
+.rail a.nav.nav-group { margin-top: 6px; }
+.rail a.nav.sub { padding-left: 30px; font-size: .94rem; }
+.rail a.nav.sub svg { width: 18px; height: 18px; }
+.tab-add { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin: 14px 0 18px; padding: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+.tab-add .field { flex: 1 1 220px; margin: 0; }
+.tab-add .btn { min-height: 42px; }
+.miss { display: inline-flex; align-items: center; gap: 8px; padding: 4px 8px 4px 12px; border: 1px dashed var(--line); border-radius: 999px; background: var(--panel); }
 .rail .count { margin-left: auto; font-size: .78rem; background: var(--st-orange); color: #fff; border-radius: 9px; padding: 0 6px; font-weight: 600; }
 .rail-foot { margin-top: auto; display: grid; gap: 8px; padding: 12px 6px 0; border-top: 1px solid var(--line); font-size: .84rem; color: var(--ink2); }
 .rail-foot label { display: grid; gap: 3px; }
