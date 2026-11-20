@@ -1,9 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
-  <rect width="96" height="96" rx="20" fill="#15202a"/>
-  <rect x="14" y="40" width="68" height="16" rx="8" fill="#d8c8a4"/>
-  <rect x="28" y="36" width="9" height="24" rx="2" fill="#d9a400"/>
-  <rect x="44" y="36" width="9" height="24" rx="2" fill="#2f8f57"/>
-  <rect x="60" y="36" width="9" height="24" rx="2" fill="#c0392b"/>
-  <rect x="4" y="46" width="14" height="4" fill="#9aa8b3"/>
-  <rect x="78" y="46" width="14" height="4" fill="#9aa8b3"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><rect width="96" height="96" rx="20" fill="#17191b"/><svg x="14" y="11" width="68" height="74" viewBox="10 15 285 345"><defs>
+  <mask id="gape" maskUnits="userSpaceOnUse" x="0" y="0" width="320" height="376">
+    <rect width="320" height="376" fill="#fff"/>
+    <polygon points="28,84 88,84 254,304 194,304" fill="#000" stroke="#000" stroke-width="16" stroke-linejoin="miter"/>
+  </mask>
+</defs>
+<path d="M76.5 54 A128 160 0 1 1 183 339.6" fill="none" stroke="#f1f3f4" stroke-width="13"/>
+<path d="M127.7 342.6 A128 160 0 0 1 29.7 130.3" fill="none" stroke="#78b82a" stroke-width="12"/>
+<g mask="url(#gape)">
+  <rect x="64" y="156" width="34" height="112" fill="#b3b9bf"/>
+  <rect x="190" y="125" width="34" height="125" fill="#78b82a"/>
+</g>
+<polygon points="28,84 88,84 254,304 194,304" fill="#f1f3f4"/></svg></svg>
