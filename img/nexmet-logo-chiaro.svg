@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 376" width="1000" height="376" role="img" aria-label="NexMet Group"><title>NexMet Group</title>
+<defs>
+  <mask id="gapb" maskUnits="userSpaceOnUse" x="0" y="0" width="320" height="376">
+    <rect width="320" height="376" fill="#fff"/>
+    <polygon points="28,84 88,84 254,304 194,304" fill="#000" stroke="#000" stroke-width="16" stroke-linejoin="miter"/>
+  </mask>
+</defs>
+<path d="M76.5 54 A128 160 0 1 1 183 339.6" fill="none" stroke="#f1f3f4" stroke-width="13"/>
+<path d="M127.7 342.6 A128 160 0 0 1 29.7 130.3" fill="none" stroke="#78b82a" stroke-width="12"/>
+<g mask="url(#gapb)">
+  <rect x="64" y="156" width="34" height="112" fill="#b3b9bf"/>
+  <rect x="190" y="125" width="34" height="125" fill="#78b82a"/>
+</g>
+<polygon points="28,84 88,84 254,304 194,304" fill="#f1f3f4"/><g fill="#f1f3f4">
+  <polygon points="355,105 380,105 418,170 418,105 440,105 440,200 415,200 377,135 377,200 355,200"/>
+  <path d="M465 105h73v20h-51v17h43v20h-43v18h53v20h-75z"/>
+  <polygon points="555,105 583,105 650,200 622,200"/>
+  <polygon points="622,105 650,105 583,200 555,200" fill="#78b82a"/>
+  <polygon points="670,200 670,105 697,105 722,150 747,105 775,105 775,200 753,200 753,140 728,185 716,185 692,140 692,200"/>
+  <path d="M790 105h73v20h-51v17h43v20h-43v18h53v20h-75z"/>
+  <polygon points="878,105 960,105 960,125 930,125 930,200 908,200 908,125 878,125"/>
+</g>
+<g stroke="#78b82a" stroke-width="4"><line x1="355" y1="262" x2="470" y2="262"/><line x1="860" y1="262" x2="960" y2="262"/></g>
+<text x="505" y="283" textLength="330" lengthAdjust="spacing" font-family="'Arial Narrow',Arial,Helvetica,sans-serif" font-size="52" font-weight="400" fill="#78b82a" stroke="#78b82a" stroke-width="2.2">GROUP</text>
+<text x="355" y="346" textLength="605" lengthAdjust="spacingAndGlyphs" font-family="'Arial Narrow',Arial,Helvetica,sans-serif" font-size="33" font-weight="700" fill="#f1f3f4">TECHNOLOGY · METALS · RECYCLING · VALUE</text>
+</svg>

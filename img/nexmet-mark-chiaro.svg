@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="10 15 285 345" width="285" height="345" role="img" aria-label="NexMet Group"><title>NexMet Group</title>
+<defs>
+  <mask id="gapd" maskUnits="userSpaceOnUse" x="0" y="0" width="320" height="376">
+    <rect width="320" height="376" fill="#fff"/>
+    <polygon points="28,84 88,84 254,304 194,304" fill="#000" stroke="#000" stroke-width="16" stroke-linejoin="miter"/>
+  </mask>
+</defs>
+<path d="M76.5 54 A128 160 0 1 1 183 339.6" fill="none" stroke="#f1f3f4" stroke-width="13"/>
+<path d="M127.7 342.6 A128 160 0 0 1 29.7 130.3" fill="none" stroke="#78b82a" stroke-width="12"/>
+<g mask="url(#gapd)">
+  <rect x="64" y="156" width="34" height="112" fill="#b3b9bf"/>
+  <rect x="190" y="125" width="34" height="125" fill="#78b82a"/>
+</g>
+<polygon points="28,84 88,84 254,304 194,304" fill="#f1f3f4"/>
+</svg>
