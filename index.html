@@ -2,25 +2,42 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://cdnjs.cloudflare.com https://unpkg.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="theme-color" content="#0f6f64">
 <title>NexMet Magazzino</title>
-<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,500..800&family=Public+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/app.css">
 </head>
 <body>
-<div class="demo-banner noprint">Prototipo di prova: usa solo dati di esempio. I dati restano in questo browser e i ruoli non sono protetti.</div>
-<header class="topbar noprint">
-  <div class="brand">NexMet <span>Magazzino</span></div>
-  <nav id="nav" aria-label="Sezioni"></nav>
-  <label class="user">Utente
-    <select id="userSelect"></select>
-  </label>
-</header>
-<main id="view"></main>
-<datalist id="posList"></datalist>
-<dialog id="dlg"><form id="dlgForm"></form></dialog>
+<a class="skip" href="#main">Vai al contenuto</a>
+<div class="shell">
+  <aside class="rail noprint" id="rail" aria-label="Navigazione"></aside>
+  <main id="main" tabindex="-1"></main>
+</div>
+<nav class="tabbar noprint" id="tabbar" aria-label="Navigazione rapida"></nav>
+
+<div class="drawer-wrap noprint" id="drawerWrap" hidden>
+  <div class="drawer-bg" data-act="drawer-close"></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Dettaglio"></aside>
+</div>
+<dialog id="dlg" class="noprint"></dialog>
+<dialog id="palette" class="noprint" aria-label="Ricerca rapida"></dialog>
 <div id="toast" role="status" aria-live="polite"></div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="app.js"></script>
+<script src="js/util.js"></script>
+<script src="js/data.js"></script>
+<script src="js/calc.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/views-banco.js"></script>
+<script src="js/views-operativo.js"></script>
+<script src="js/views-dati.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>
