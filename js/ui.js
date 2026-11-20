@@ -118,6 +118,12 @@
     if (m && String(m).indexOf('data:image/') === 0) return '<span class="' + c + '"><img src="' + esc(m) + '" alt="" loading="lazy" decoding="async"></span>';
     return '<span class="' + c + ' none" aria-hidden="true">' + esc(String((p && p.tipo) || '?').charAt(0).toUpperCase()) + '</span>';
   };
+  /* Logo NexMet Group: due versioni (per sfondo chiaro e scuro), il CSS mostra quella giusta */
+  UI.logo = function (kind, cls) {
+    var f = kind === 'full' ? 'nexmet-logo' : 'nexmet-mark';
+    return '<img class="logo logo-light ' + (cls || '') + '" src="img/' + f + '.svg" alt="NexMet Group">' +
+      '<img class="logo logo-dark ' + (cls || '') + '" src="img/' + f + '-chiaro.svg" alt="" aria-hidden="true">';
+  };
   UI.refThumb = function (refId) {
     var p = refId && NM.calc.pezzo(refId);
     return p ? UI.thumb(p, 'tiny') : '';

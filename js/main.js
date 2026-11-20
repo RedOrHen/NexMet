@@ -47,7 +47,7 @@
   function renderChrome(path) {
     var todo = C.todo().reduce(function (s, x) { return s + x.n; }, 0);
     var role = D.user().ruolo;
-    $('#rail').innerHTML = '<div class="brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>NexMet<small>Magazzino</small></span></div>' +
+    $('#rail').innerHTML = '<div class="brand">' + UI.logo('mark', 'logo-mark') + '<span>Magazzino<small>NexMet Group</small></span></div>' +
       ROUTES.filter(function (r) { return !r.admin || UI.isAdmin(); }).map(function (r) {
         return '<a class="nav" href="#/' + r.path + '"' + (r.path === path ? ' aria-current="page"' : '') + '>' + UI.icon(r.icon) + '<span>' + r.label + '</span>' + (r.path === '' && todo ? '<span class="count" title="Cose da sistemare">' + todo + '</span>' : '') + '</a>';
       }).join('') +
@@ -144,7 +144,7 @@
   /* ---------- Accesso: schermate ---------- */
   function lock() { document.body.classList.add('locked'); UI.closeDrawer(); UI.closeDialog(); }
   function loginShell(inner) {
-    return '<section class="login"><div class="brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>NexMet<small>Magazzino</small></span></div>' + inner + '</section>';
+    return '<section class="login"><div class="login-logo">' + UI.logo('full', 'logo-full') + '<small>Magazzino</small></div>' + inner + '</section>';
   }
   function setMsg(text, kind) { var m = $('#loginMsg'); if (m) { m.textContent = text || ''; m.className = 'msg' + (kind ? ' ' + kind : ''); } }
   function niceError(e) {
