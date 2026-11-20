@@ -1,5 +1,5 @@
 /* Funzionamento offline: prima la rete, poi la copia salvata. */
-var CACHE = 'nexmet-v3-1';
+var CACHE = 'nexmet-v3-2';
 var SHELL = [
   './', 'index.html', 'css/app.css', 'manifest.webmanifest', 'icon.svg',
   'js/util.js', 'js/config.js', 'js/data.js', 'js/calc.js', 'js/ui.js',
