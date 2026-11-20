@@ -71,6 +71,14 @@
     var val = (v == null || v === '') ? (f.def == null ? '' : f.def) : v;
     var req = f.required ? ' required' : '';
     var dep = (f.dep ? ' data-dep="' + f.dep + '"' : '') + (f.attrs ? ' ' + f.attrs : '');
+    if (f.type === 'foto') {
+      return '<div class="field' + (f.full ? ' full' : '') + '"' + dep + '><span>' + esc(f.label) + '</span><div class="fotofield">' +
+        '<span class="fotoprev">' + UI.thumb({ miniatura: val, tipo: '+' }, 'big') + '</span>' +
+        '<input type="hidden" name="' + f.key + '" value="' + esc(val) + '">' +
+        '<input type="file" accept="image/*" data-foto="' + f.key + '" aria-label="' + esc(f.label) + '">' +
+        '<button type="button" class="btn sm" data-foto-clear="' + f.key + '">Togli</button></div>' +
+        (f.hint ? '<small>' + esc(f.hint) + '</small>' : '') + '</div>';
+    }
     if (f.type === 'checkbox') {
       return '<label class="field check' + (f.full ? ' full' : '') + '"' + dep + '><input type="checkbox" name="' + f.key + '"' + (val ? ' checked' : '') + '><span>' + esc(f.label) + '</span></label>';
     }
@@ -103,6 +111,59 @@
     });
     return out;
   };
+  /* ---------- Miniature: l'immagine piena resta sul PC, qui solo una copia piccola ---------- */
+  UI.thumb = function (p, cls) {
+    var c = 'thumb' + (cls ? ' ' + cls : '');
+    var m = p && p.miniatura;
+    if (m && String(m).indexOf('data:image/') === 0) return '<span class="' + c + '"><img src="' + esc(m) + '" alt="" loading="lazy" decoding="async"></span>';
+    return '<span class="' + c + ' none" aria-hidden="true">' + esc(String((p && p.tipo) || '?').charAt(0).toUpperCase()) + '</span>';
+  };
+  UI.refThumb = function (refId) {
+    var p = refId && NM.calc.pezzo(refId);
+    return p ? UI.thumb(p, 'tiny') : '';
+  };
+  /* Anteprima del pezzo scelto in un menu a tendina (moduli di vendita e simili) */
+  UI.bindPezzoPreview = function (form, key) {
+    var sel = form.elements[key]; if (!sel) return;
+    var box = document.createElement('div'); box.className = 'withthumb pezzoprev';
+    sel.parentNode.appendChild(box);
+    var draw = function () {
+      var p = NM.calc.pezzo(sel.value);
+      box.innerHTML = p ? UI.thumb(p, 'big') + '<div><b>' + esc(p.nome) + '</b><small class="sub">' + esc(p.posizione || 'posizione da assegnare') + '</small></div>' : '';
+    };
+    sel.addEventListener('change', draw); draw();
+  };
+  UI.lotThumbs = function (l) {
+    var ps = NM.data.state.pezzi.filter(function (p) { return p.lottoId === l.id && p.miniatura; }).slice(0, 3);
+    return ps.length ? '<span class="thumbs">' + ps.map(function (p) { return UI.thumb(p); }).join('') + '</span>' : UI.thumb({ tipo: 'L' });
+  };
+  UI.makeThumb = function (file, cb) {
+    var url = URL.createObjectURL(file), img = new Image();
+    img.onload = function () {
+      var max = 200, w = img.naturalWidth, h = img.naturalHeight, k = Math.min(1, max / Math.max(w, h));
+      var cv = document.createElement('canvas'); cv.width = Math.max(1, Math.round(w * k)); cv.height = Math.max(1, Math.round(h * k));
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      URL.revokeObjectURL(url);
+      cb(cv.toDataURL('image/jpeg', 0.7));
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); cb(null); };
+    img.src = url;
+  };
+  function wireFoto(form) {
+    U.$$('input[data-foto]', form).forEach(function (inp) {
+      var key = inp.dataset.foto, hid = form.elements[key], prev = inp.parentNode.querySelector('.fotoprev');
+      var show = function () { prev.innerHTML = UI.thumb({ miniatura: hid.value, tipo: '+' }, 'big'); };
+      inp.addEventListener('change', function () {
+        var f = inp.files && inp.files[0]; if (!f) return;
+        UI.makeThumb(f, function (data) {
+          if (!data) { UI.toast('Non riesco a leggere questa immagine. Prova con un JPG o un PNG.'); return; }
+          hid.value = data; show();
+        });
+      });
+      var clr = inp.parentNode.querySelector('[data-foto-clear]');
+      clr.addEventListener('click', function () { hid.value = ''; inp.value = ''; show(); });
+    });
+  }
   function wireDeps(form) {
     U.$$('[data-dep]', form).forEach(function (row) {
       var dep = form.elements[row.dataset.dep];
@@ -119,7 +180,7 @@
       '<div class="dlg-actions"><button type="button" class="btn ghost" data-act="dlg-close">Annulla</button>' +
       '<button type="submit" class="btn primary">' + esc(opts.submit || 'Salva') + '</button></div></form>', opts);
     var form = $('#dlgForm', d);
-    wireDeps(form);
+    wireDeps(form); wireFoto(form);
     form.onsubmit = function (e) {
       e.preventDefault();
       if (onSave(UI.readFields(form, fields), form) === false) return;
@@ -164,7 +225,7 @@
   function palRender() {
     var list = $('#palList');
     list.innerHTML = palItems.length ? palItems.map(function (it, i) {
-      return '<li><button type="button" data-pal="' + i + '" aria-selected="' + (i === palSel) + '"><span>' + esc(it.label) + '</span><small>' + esc(it.hint || '') + '</small></button></li>';
+      return '<li><button type="button" data-pal="' + i + '" aria-selected="' + (i === palSel) + '">' + (it.thumb || '') + '<span>' + esc(it.label) + '</span><small>' + esc(it.hint || '') + '</small></button></li>';
     }).join('') : '<li class="empty">Nessun risultato</li>';
   }
   function palFilter(q) {
@@ -175,7 +236,7 @@
       var s = NM.data.state, n = 0;
       s.pezzi.forEach(function (p) {
         if (n < 8 && NM.calc.haystack(p).indexOf(nq) !== -1) {
-          n++; items.push({ label: p.nome, hint: (p.posizione || 'senza posizione') + ' — ' + p.codice, run: function () { NM.views.openPezzo(p.id); } });
+          n++; items.push({ thumb: UI.thumb(p), label: p.nome, hint: (p.posizione || 'senza posizione') + ' — ' + p.codice, run: function () { NM.views.openPezzo(p.id); } });
         }
       });
       s.lotti.forEach(function (l) { if (U.norm(l.nome + ' ' + (l.fonte || '')).indexOf(nq) !== -1) items.push({ label: l.nome, hint: 'Lotto', run: function () { NM.go('margine', { lotto: l.id }); } }); });

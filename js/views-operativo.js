@@ -25,7 +25,7 @@
     root.innerHTML = '<div class="page-head"><div><h1>Lotti</h1><p class="sub">Ogni acquisto, con il costo ripartito sui pezzi che ne ricavi.</p></div><div class="toolbar">' +
       (edit ? '<button type="button" class="btn primary" data-act="carico-open">' + UI.icon('plus') + 'Carica un lotto</button>' : '') + '</div></div>' +
       UI.table([
-        { h: 'Lotto', cls: 'name', f: function (l) { return '<b>' + esc(l.nome) + '</b><small>' + esc(l.fonte || '') + '</small>'; } },
+        { h: 'Lotto', cls: 'name', f: function (l) { return '<div class="withthumb">' + UI.lotThumbs(l) + '<div><b>' + esc(l.nome) + '</b><small>' + esc(l.fonte || '') + '</small></div></div>'; } },
         { h: 'Data', f: function (l) { return U.fdate(l.data); } },
         { h: 'Costo', cls: 'num', f: function (l) { return U.money(l.costo); } },
         { h: 'Pezzi', cls: 'num', f: function (l) { var s = C.lottoStats(l); return s.ps.length + ' tipi, ' + U.num(s.qtot) + ' unità'; } },
@@ -100,7 +100,7 @@
     var avail = D.state.pezzi.filter(function (p) { return C.giacenza(p) > 0; });
     if (!avail.length) { UI.toast('Non c’è niente in magazzino da vendere.'); return; }
     var form = UI.form('Nuova vendita', venditaFields(null), { pezzoId: pezzoId || avail[0].id, modo: 'pezzo', spedStato: 'Da spedire' }, function (v) { return saveVendita(v, null); }, { submit: 'Registra la vendita' });
-    syncModo(form);
+    syncModo(form); UI.bindPezzoPreview(form, 'pezzoId');
   };
   A['pezzo-sell'] = function (el) { UI.closeDrawer(); V.venditaNew(el.dataset.id); };
   A['vendita-new'] = function () { V.venditaNew(); };
@@ -108,7 +108,7 @@
     if (!UI.guardEdit()) return;
     var v = D.get('vendite', el.dataset.id); if (!v) return;
     var form = UI.form('Modifica vendita', venditaFields(v), Object.assign({ modo: 'pezzo' }, v), function (x) { return saveVendita(x, v); });
-    syncModo(form);
+    syncModo(form); UI.bindPezzoPreview(form, 'pezzoId');
   };
   A['vendita-del'] = function (el) {
     if (!UI.guardEdit()) return;
@@ -163,7 +163,7 @@
       }).join('') + '</div>' +
       UI.table([
         { h: 'Data', f: function (v) { return U.fdate(v.data); } },
-        { h: 'Pezzo', cls: 'name', f: function (v) { var p = C.pezzo(v.pezzoId); return p ? '<b>' + esc(p.nome) + '</b><small>' + esc(p.codice) + (v.modo === 'peso' ? ' — a peso, ' + U.num(v.pesoKg) + ' kg' : '') + (v.modo === 'lotto' ? ' — lotto intero' : '') + '</small>' : '—'; } },
+        { h: 'Pezzo', cls: 'name', f: function (v) { var p = C.pezzo(v.pezzoId); return p ? '<div class="withthumb">' + UI.thumb(p) + '<div><b>' + esc(p.nome) + '</b><small>' + esc(p.codice) + (v.modo === 'peso' ? ' — a peso, ' + U.num(v.pesoKg) + ' kg' : '') + (v.modo === 'lotto' ? ' — lotto intero' : '') + '</small></div></div>' : '—'; } },
         { h: 'Unità', cls: 'num', f: function (v) { return U.num(v.quantita); } },
         { h: 'Incasso', cls: 'num', f: function (v) { return U.money(v.ricavo); } },
         { h: 'Cliente', f: function (v) { var c = C.anag(v.clienteId); return c ? esc(c.nome) : '<span class="muted">—</span>'; } },
@@ -182,7 +182,7 @@
       '<div><dt>Margine realizzato</dt><dd class="' + U.sign(tot.margine) + '">' + U.money(tot.margine) + '</dd></div>' +
       '<div><dt>Se vendi tutto al prezzo finale</dt><dd class="' + U.sign(tot.prev) + '">' + U.money(tot.prev) + '</dd></div></dl>' +
       '<section class="section"><h2>Lotti</h2>' + UI.table([
-        { h: 'Lotto', cls: 'name', f: function (x) { return '<b>' + esc(x.l.nome) + '</b><small>' + U.fdate(x.l.data) + '</small>'; } },
+        { h: 'Lotto', cls: 'name', f: function (x) { return '<div class="withthumb">' + UI.lotThumbs(x.l) + '<div><b>' + esc(x.l.nome) + '</b><small>' + U.fdate(x.l.data) + '</small></div></div>'; } },
         { h: 'Costo', cls: 'num', f: function (x) { return U.money(x.s.costo); } },
         { h: 'Incassato', cls: 'num', f: function (x) { return U.money(x.s.ricavi); } },
         { h: 'Recuperato', cls: 'num', f: function (x) { return U.pct(x.s.recupero); } },
@@ -198,7 +198,7 @@
         (UI.canEdit() ? '<label class="toolbar">Ripartizione <select data-act="ripart" data-id="' + esc(sel.id) + '"><option value="quantita"' + (sel.ripartizione !== 'valore' ? ' selected' : '') + '>Per quantità</option><option value="valore"' + (sel.ripartizione === 'valore' ? ' selected' : '') + '>Per valore stimato</option></select></label>' : '') + '</div>' +
         '<div class="note">Dividere per quantità tratta allo stesso modo un pezzo da pochi centesimi e uno da decine di euro. Prova “Per valore stimato”: serve un prezzo finale o di riferimento su ogni pezzo del lotto.</div>' +
         UI.table([
-          { h: 'Pezzo', cls: 'name', f: function (p) { return '<b>' + esc(p.nome) + '</b><small>' + esc(p.codice) + '</small>'; } },
+          { h: 'Pezzo', cls: 'name', f: function (p) { return '<div class="withthumb">' + UI.thumb(p) + '<div><b>' + esc(p.nome) + '</b><small>' + esc(p.codice) + '</small></div></div>'; } },
           { h: 'Unità', cls: 'num', f: function (p) { return U.num(p.quantita); } },
           { h: 'Costo per unità', cls: 'num', f: function (p) { return U.money(C.unitCost(p)); } },
           { h: 'Venduti', cls: 'num', f: function (p) { return U.num(C.pezzoStats(p).venduti); } },
@@ -306,7 +306,7 @@
     var nq = U.norm(LAB.q).trim(), list = D.state.pezzi.filter(function (p) { return !nq || C.haystack(p).indexOf(nq) !== -1; }).slice(0, 200);
     var box = $('#labPick'); if (!box) return;
     box.innerHTML = list.length ? list.map(function (p) {
-      return '<label><input type="checkbox" data-act="lab-toggle" data-id="' + esc(p.id) + '"' + (LAB.sel[p.id] ? ' checked' : '') + '><span>' + esc(p.codice) + ' — ' + esc(p.nome) + '<br><small class="sub">' + esc(p.posizione || 'senza posizione') + '</small></span></label>';
+      return '<label><input type="checkbox" data-act="lab-toggle" data-id="' + esc(p.id) + '"' + (LAB.sel[p.id] ? ' checked' : '') + '>' + UI.thumb(p) + '<span>' + esc(p.codice) + ' — ' + esc(p.nome) + '<br><small class="sub">' + esc(p.posizione || 'senza posizione') + '</small></span></label>';
     }).join('') : '<p class="muted">Nessun pezzo trovato.</p>';
   }
   V.etichette = function (root, params) {
@@ -350,7 +350,7 @@
     var p = findByCode(code);
     if (!p) { box.innerHTML = '<div class="note warn">Nessun pezzo con il codice <b>' + esc(code) + '</b>. Controlla l’etichetta o cercalo per nome.</div>'; return; }
     var g = C.giacenza(p);
-    box.innerHTML = '<div class="where"><div><small>' + esc(p.codice) + '</small><b>' + esc(p.nome) + '</b><small>' + esc(p.posizione ? 'Posizione: ' + p.posizione : 'Posizione da assegnare') + '</small></div>' +
+    box.innerHTML = '<div class="where"><div class="withthumb">' + UI.thumb(p, 'big') + '<div><small>' + esc(p.codice) + '</small><b>' + esc(p.nome) + '</b><small>' + esc(p.posizione ? 'Posizione: ' + p.posizione : 'Posizione da assegnare') + '</small></div></div>' +
       '<div class="stock"><div class="qty">' + U.num(g) + '<br><small class="qsub">' + (g > 0 ? 'in magazzino' : 'esaurito') + '</small></div></div></div>' +
       '<div class="actions-row"><button type="button" class="btn primary" data-act="pezzo-open" data-id="' + esc(p.id) + '">Apri la scheda</button>' +
       (UI.canEdit() && g > 0 ? '<button type="button" class="btn" data-act="pezzo-sell" data-id="' + esc(p.id) + '">Vendi</button>' : '') + '</div>';

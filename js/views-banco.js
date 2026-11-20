@@ -35,7 +35,7 @@
       var g = C.giacenza(p);
       return '<li><button type="button" class="res-row" data-act="pezzo-open" data-id="' + esc(p.id) + '">' +
         '<span class="res-pos' + (p.posizione ? '' : ' none') + '">' + esc(p.posizione || 'Posizione da assegnare') + '</span>' +
-        '<span class="res-name">' + esc(p.nome) + '<small>' + esc([p.marca, p.modello, p.capacita].filter(Boolean).join(' ') + (p.marca || p.modello || p.capacita ? ' — ' : '') + p.codice) + '</small></span>' +
+        '<span class="res-name withthumb">' + UI.thumb(p) + '<span>' + esc(p.nome) + '<small>' + esc([p.marca, p.modello, p.capacita].filter(Boolean).join(' ') + (p.marca || p.modello || p.capacita ? ' — ' : '') + p.codice) + '</small></span></span>' +
         '<span class="res-qty">' + U.num(g) + '<small>di ' + U.num(p.quantita) + '</small></span></button></li>';
     }).join('');
   }
@@ -81,7 +81,7 @@
           '<span class="' + U.sign(x.st.margine) + '">' + U.money(x.st.margine) + '</span></button>';
       }).join('') + '</div><p class="sub" style="margin-top:12px">La barra è l’incasso; la linea scura è il costo del lotto.</p>' : '<p class="muted">Nessun lotto: registrane uno per vedere quanto rende.</p>') + '</section></div>' +
       (logs.length ? '<section class="section"><h2>Ultime attività</h2><ul class="log">' + logs.map(function (e) {
-        return '<li><time>' + U.ftime(e.ts) + '</time><span><b>' + esc(e.user) + '</b> ' + esc(e.action) + ' ' + esc(e.label) + '</span></li>';
+        return '<li><time>' + U.ftime(e.ts) + '</time><span>' + (e.entity === 'pezzi' || e.entity === 'vendite' ? UI.refThumb(e.refId) + ' ' : '') + '<b>' + esc(e.user) + '</b> ' + esc(e.action) + ' ' + esc(e.label) + '</span></li>';
       }).join('') + '</ul></section>' : '');
     drawFinder('');
     var q = $('#finderQ');
@@ -153,11 +153,12 @@
     $('#pezzCount').textContent = rows.length + (rows.length === 1 ? ' pezzo' : ' pezzi');
     box.innerHTML = UI.table([
       { h: '', cls: 'ck', f: function (p) { return '<input type="checkbox" data-act="sel-toggle" data-id="' + esc(p.id) + '"' + (SEL[p.id] ? ' checked' : '') + ' aria-label="Seleziona ' + esc(p.nome) + '">'; } },
-      { h: 'Pezzo', cls: 'name', f: function (p) { return '<b>' + esc(p.nome) + '</b><small>' + esc([p.marca, p.modello, p.capacita].filter(Boolean).join(' ')) + (p.marca || p.modello || p.capacita ? ' — ' : '') + esc(p.codice) + '</small>'; } },
+      { h: 'Pezzo', cls: 'name', f: function (p) { return '<div class="withthumb">' + UI.thumb(p) + '<div><b>' + esc(p.nome) + '</b><small>' + esc([p.marca, p.modello, p.capacita].filter(Boolean).join(' ')) + (p.marca || p.modello || p.capacita ? ' — ' : '') + esc(p.codice) + '</small></div></div>'; } },
       { h: 'Stato', f: function (p) { return UI.chip('stato', p.stato); } },
       { h: 'Posizione', f: function (p) { return p.posizione ? '<span class="posbadge">' + esc(p.posizione) + '</span>' : '<span class="posbadge none">da assegnare</span>'; } },
       { h: 'Lotto', f: function (p) { var l = C.lotto(p.lottoId); return l ? esc(l.nome) : '<span class="muted">—</span>'; } },
       { h: 'Giacenza', cls: 'num', f: function (p) { var g = C.giacenza(p); return '<b' + (g <= 0 ? ' class="muted"' : '') + '>' + U.num(g) + '</b> <span class="muted">/ ' + U.num(p.quantita) + '</span>'; } },
+      { h: 'Prezzo ipotetico', cls: 'num', f: function (p) { return U.money(p.prezzoIpotetico); } },
       { h: 'Prezzo', cls: 'num', f: function (p) { return U.money(p.prezzoFinale); } },
       { h: '', cls: 'acts', f: function (p) { return (UI.canEdit() && C.giacenza(p) > 0 ? UI.btn('Vendi', 'pezzo-sell', p.id) + ' ' : '') + UI.btn('Etichetta', 'pezzo-label', p.id); } }
     ], shown, {
@@ -241,7 +242,9 @@
       { key: 'posizione', label: 'Posizione di magazzino', list: 'posList', full: true, hint: 'Es. Scaffale A - Scatola 3' },
       { key: 'lottoId', label: 'Lotto di origine', type: 'select', full: true, options: [['', '— nessuno —']].concat(D.state.lotti.map(function (l) { return [l.id, l.nome]; })) },
       { key: 'test', label: 'Test', full: true, hint: 'Esito o note. Il metodo di test è ancora da definire.' },
-      { key: 'fotoPercorso', label: 'Percorso delle foto sul PC', full: true, hint: 'Il sito salva solo il percorso, non l’immagine.' },
+      { key: 'miniatura', label: 'Miniatura', type: 'foto', full: true, hint: 'Una copia piccola per riconoscere il pezzo. La foto piena resta sul PC.' },
+      { key: 'fotoPercorso', label: 'Percorso delle foto sul PC', full: true, hint: 'Il sito salva solo il percorso della foto piena.' },
+      { key: 'prezzoIpotetico', label: 'Prezzo ipotetico di vendita (€)', type: 'number', step: '0.01', hint: 'Il prezzo a cui pensi di vendere, per unità.' },
       { key: 'prezzoRif', label: 'Prezzo di riferimento online (€)', type: 'number', step: '0.01' },
       { key: 'prezzoIA', label: 'Opinione IA (€)', type: 'number', step: '0.01' },
       { key: 'prezzoFinale', label: 'Prezzo finale (€)', type: 'number', step: '0.01' },
@@ -329,7 +332,7 @@
       var rows = [
         ['Marca e modello', esc([p.marca, p.modello].filter(Boolean).join(' ') || '—')], ['Codice produttore', esc(p.codiceProdotto || '—')], ['Capacità', esc(p.capacita || '—')],
         ['Peso totale', U.has(p.peso) ? U.num(p.peso) + ' g' : '—'], ['Test', esc(p.test || '—')], ['Lotto', l ? esc(l.nome) : '—'],
-        ['Foto sul PC', esc(p.fotoPercorso || '—')], ['Prezzo di riferimento', U.money(p.prezzoRif)], ['Opinione IA', U.money(p.prezzoIA)], ['Prezzo finale', U.money(p.prezzoFinale)],
+        ['Foto sul PC', esc(p.fotoPercorso || '—')], ['Prezzo ipotetico', U.money(p.prezzoIpotetico)], ['Prezzo di riferimento', U.money(p.prezzoRif)], ['Opinione IA', U.money(p.prezzoIA)], ['Prezzo finale', U.money(p.prezzoFinale)],
         ['Costo per unità', l ? U.money(m.uc) : '—'], ['Incassato', U.money(m.ricavi)],
         ['Margine realizzato', l || m.venduti ? '<span class="' + U.sign(m.margine) + '">' + U.money(m.margine) + '</span>' : '—']
       ];
@@ -338,7 +341,7 @@
       body = '<dl class="detail">' + rows.map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>'; }).join('') + '</dl>';
     }
     UI.drawer(
-      '<div class="drawer-head"><div><h2>' + esc(p.nome) + '</h2><p class="sub">' + esc([p.tipo, p.marca, p.modello].filter(Boolean).join(' ')) + '</p><span class="code">' + esc(p.codice) + '</span> ' + UI.chip('stato', p.stato) + '</div>' +
+      '<div class="drawer-head"><div class="withthumb">' + UI.thumb(p, 'big') + '<div><h2>' + esc(p.nome) + '</h2><p class="sub">' + esc([p.tipo, p.marca, p.modello].filter(Boolean).join(' ')) + '</p><span class="code">' + esc(p.codice) + '</span> ' + UI.chip('stato', p.stato) + '</div></div>' +
       '<button type="button" class="btn ghost" data-act="drawer-close" aria-label="Chiudi">' + UI.icon('close') + '</button></div>' +
       '<div class="where"><div><small>Posizione</small><b>' + esc(p.posizione || 'Da assegnare') + '</b></div>' +
       '<div class="stock">' + (edit ? '<button type="button" class="btn" data-act="qty-adj" data-id="' + esc(id) + '" data-d="-1" aria-label="Togli un pezzo">−</button>' : '') +
@@ -382,6 +385,8 @@
       '<td><input class="w" data-f="peso" type="number" min="0" step="any" value="' + esc(v.peso == null ? '' : v.peso) + '" aria-label="Peso in grammi"></td>' +
       '<td><select data-f="stato" aria-label="Stato">' + C.STATI.map(function (t) { return '<option' + (v.stato === t ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select></td>' +
       '<td><input data-f="posizione" list="posList" value="' + esc(v.posizione || '') + '" placeholder="Scaffale - Scatola" aria-label="Posizione"></td>' +
+      '<td class="rowfoto"><span class="fotoprev">' + UI.thumb({ miniatura: v.miniatura, tipo: '+' }) + '</span><input data-f="miniatura" type="hidden" value="' + esc(v.miniatura || '') + '">' +
+      '<label class="btn sm">Foto<input type="file" accept="image/*" data-rowfoto hidden aria-label="Foto del pezzo"></label></td>' +
       '<td><input data-f="datiSensibili" type="checkbox"' + (v.datiSensibili ? ' checked' : '') + ' aria-label="Può contenere dati"></td>' +
       '<td><button type="button" class="btn ghost sm" data-act="carico-del" aria-label="Togli la riga">' + UI.icon('close') + '</button></td></tr>';
   }
@@ -403,12 +408,22 @@
     ];
     var d = UI.openDialog('<form id="caricoForm"><h2>Carica un lotto</h2><p class="sub">Registra il lotto e i pezzi che ne hai ricavato. Invio nell’ultima riga ne aggiunge un’altra.</p>' +
       '<div class="grid">' + UI.fieldsHtml(fields, {}) + '</div><h3>Pezzi del lotto</h3>' +
-      '<div class="carico-wrap"><table class="carico"><thead><tr><th>Tipo</th><th>Nome</th><th>Qtà</th><th>Peso (g)</th><th>Stato</th><th>Posizione</th><th>Dati</th><th></th></tr></thead><tbody id="caricoRows">' + caricoRow() + '</tbody></table></div>' +
+      '<div class="carico-wrap"><table class="carico"><thead><tr><th>Tipo</th><th>Nome</th><th>Qtà</th><th>Peso (g)</th><th>Stato</th><th>Posizione</th><th>Foto</th><th>Dati</th><th></th></tr></thead><tbody id="caricoRows">' + caricoRow() + '</tbody></table></div>' +
       '<div class="toolbar" style="margin-top:8px"><button type="button" class="btn" data-act="carico-add">' + UI.icon('plus') + 'Aggiungi riga</button>' +
       '<button type="button" class="btn ghost" data-act="carico-pos">Stessa posizione su tutte le righe</button></div>' +
       '<p class="sub" style="margin-top:8px">Dati: spunta i dischi e gli altri supporti che possono contenere dati.</p>' +
       '<div class="dlg-actions"><button type="button" class="btn ghost" data-act="dlg-close">Annulla</button><button type="submit" class="btn primary">Salva lotto e pezzi</button></div></form>', { wide: true });
     var form = $('#caricoForm', d); caricoLast = form;
+    form.addEventListener('change', function (e) {
+      var inp = e.target; if (!inp.matches || !inp.matches('input[data-rowfoto]')) return;
+      var f = inp.files && inp.files[0]; if (!f) return;
+      var td = inp.closest('td');
+      UI.makeThumb(f, function (data) {
+        if (!data) { UI.toast('Non riesco a leggere questa immagine. Prova con un JPG o un PNG.'); return; }
+        td.querySelector('[data-f=miniatura]').value = data;
+        td.querySelector('.fotoprev').innerHTML = UI.thumb({ miniatura: data, tipo: '+' });
+      });
+    });
     form.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter' || e.target.tagName === 'BUTTON' || e.target.tagName === 'TEXTAREA') return;
       var tr = e.target.closest('#caricoRows tr');
@@ -431,7 +446,7 @@
         D.put('pezzi', {
           id: U.uid(), codice: D.nextCode(), creato: Date.now(), lottoId: l.id, nome: r.nome, tipo: r.tipo, quantita: Math.max(1, U.n(r.quantita)),
           peso: r.peso === '' ? '' : Number(r.peso), stato: r.stato, posizione: r.posizione, datiSensibili: !!r.datiSensibili, fase: C.FASI[0],
-          marca: '', modello: '', codiceProdotto: '', capacita: '', test: '', fotoPercorso: '', prezzoRif: '', prezzoIA: '', prezzoFinale: '', certificato: '', note: ''
+          marca: '', modello: '', codiceProdotto: '', capacita: '', test: '', fotoPercorso: '', prezzoRif: '', prezzoIA: '', prezzoFinale: '', prezzoIpotetico: '', miniatura: r.miniatura || '', certificato: '', note: ''
         });
       });
       D.log('ha caricato il lotto', 'lotti', l.id, l.nome + ' con ' + rows.length + ' tipi di pezzo');
