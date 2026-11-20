@@ -73,7 +73,7 @@
     var g = function (r) { for (var i = 1; i < arguments.length; i++) { var v = r[arguments[i]]; if (v !== undefined && v !== '') return v; } return ''; };
     return U.csvParse(text).map(function (r) {
       return {
-        nome: g(r, 'nome', 'name'), tipo: pick(C.TIPI, g(r, 'tipo'), 'Altro'), marca: g(r, 'marca'), modello: g(r, 'modello'),
+        nome: g(r, 'nome', 'name'), tipo: pick(C.tipi(), g(r, 'tipo'), C.tipi().indexOf('Altro') !== -1 ? 'Altro' : C.tipi()[C.tipi().length - 1]), marca: g(r, 'marca'), modello: g(r, 'modello'),
         codiceProdotto: g(r, 'codice', 'codice produttore', 'codiceprodotto'), capacita: g(r, 'capacita'),
         quantita: Math.max(1, num(g(r, 'quantita', 'qta', 'quantity')) || 1), stato: pick(C.STATI, g(r, 'stato'), 'Da verificare'),
         peso: num(g(r, 'peso', 'peso (g)', 'peso totale (g)')), posizione: g(r, 'posizione'), lotto: g(r, 'lotto'),

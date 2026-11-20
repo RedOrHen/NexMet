@@ -16,6 +16,8 @@
     { path: 'rubrica', label: 'Rubrica', icon: 'users', view: 'rubrica' },
     { path: 'etichette', label: 'Etichette', icon: 'tag', view: 'etichette' },
     { path: 'scan', label: 'Scansiona', icon: 'scan', view: 'scan' },
+    { path: 'tabelle/tipo', label: 'Tipo', icon: 'tag', view: 'tabTipo', group: 'Tabelle' },
+    { path: 'tabelle/posizioni', label: 'Posizioni', icon: 'pin', view: 'tabPosizioni', group: 'Tabelle' },
     { path: 'dati', label: 'Dati e backup', icon: 'db', view: 'dati' },
     { path: 'admin', label: 'Admin', icon: 'shield', view: 'admin', admin: true }
   ];
@@ -48,9 +50,17 @@
     var todo = C.todo().reduce(function (s, x) { return s + x.n; }, 0);
     var role = D.user().ruolo;
     $('#rail').innerHTML = '<div class="brand">' + UI.logo('mark', 'logo-mark') + '<span>Magazzino<small>NexMet Group</small></span></div>' +
-      ROUTES.filter(function (r) { return !r.admin || UI.isAdmin(); }).map(function (r) {
-        return '<a class="nav" href="#/' + r.path + '"' + (r.path === path ? ' aria-current="page"' : '') + '>' + UI.icon(r.icon) + '<span>' + r.label + '</span>' + (r.path === '' && todo ? '<span class="count" title="Cose da sistemare">' + todo + '</span>' : '') + '</a>';
-      }).join('') +
+      (function () {
+        var lastGroup = '';
+        return ROUTES.filter(function (r) { return !r.admin || UI.isAdmin(); }).map(function (r) {
+          var head = '';
+          if (r.group && r.group !== lastGroup) {
+            lastGroup = r.group;
+            head = '<a class="nav nav-group' + (path.indexOf('tabelle/') === 0 ? ' open' : '') + '" href="#/' + r.path + '">' + UI.icon('table') + '<span>' + r.group + '</span></a>';
+          }
+          return head + '<a class="nav' + (r.group ? ' sub' : '') + '" href="#/' + r.path + '"' + (r.path === path ? ' aria-current="page"' : '') + '>' + UI.icon(r.icon) + '<span>' + r.label + '</span>' + (r.path === '' && todo ? '<span class="count" title="Cose da sistemare">' + todo + '</span>' : '') + '</a>';
+        }).join('');
+      })() +
       '<div class="rail-foot"><button type="button" class="btn sm" data-act="palette-open">' + UI.icon('search') + 'Cerca ovunque (Ctrl+K)</button>' +
       '<div class="me"><span>Utente: <b>' + esc(D.user().nome) + '</b> (' + ({ admin: 'Admin', modifica: 'Modifica', consulta: 'Consultazione' }[role]) + ')</span></div>' +
       '<div class="me"><button type="button" class="btn sm" data-act="refresh">Aggiorna i dati</button><button type="button" class="btn sm" data-act="logout">Esci</button></div>' +
@@ -64,8 +74,8 @@
   }
   A['more-open'] = function () {
     UI.openDialog('<h2>Altre sezioni</h2><div class="filters" style="margin-top:14px;display:grid;gap:6px">' +
-      ROUTES.filter(function (r) { return ['lotti', 'margine', 'rubrica', 'etichette', 'dati', 'admin'].indexOf(r.path) !== -1 && (!r.admin || UI.isAdmin()); }).map(function (r) {
-        return '<button type="button" class="btn" data-act="goto" data-id="' + r.path + '" style="justify-content:flex-start">' + UI.icon(r.icon) + r.label + '</button>';
+      ROUTES.filter(function (r) { return ['lotti', 'margine', 'rubrica', 'etichette', 'tabelle/tipo', 'tabelle/posizioni', 'dati', 'admin'].indexOf(r.path) !== -1 && (!r.admin || UI.isAdmin()); }).map(function (r) {
+        return '<button type="button" class="btn" data-act="goto" data-id="' + r.path + '" style="justify-content:flex-start">' + UI.icon(r.icon) + (r.group ? r.group + ': ' : '') + r.label + '</button>';
       }).join('') + '<button type="button" class="btn" data-act="palette-open" style="justify-content:flex-start">' + UI.icon('search') + 'Cerca ovunque</button>' +
       '<button type="button" class="btn" data-act="theme-cycle" style="justify-content:flex-start">Cambia tema</button>' +
       '<button type="button" class="btn" data-act="refresh" style="justify-content:flex-start">Aggiorna i dati</button>' +
@@ -77,7 +87,9 @@
   var lastPath = null;
   NM.render = function () {
     if (document.body.classList.contains('locked')) return;
-    var r = NM.route(), entry = ROUTES.filter(function (x) { return x.path === r.path; })[0] || ROUTES[0];
+    var r = NM.route();
+    if (r.path === 'tabelle') { location.hash = '#/tabelle/tipo'; return; }
+    var entry = ROUTES.filter(function (x) { return x.path === r.path; })[0] || ROUTES[0];
     if (entry.admin && !UI.isAdmin()) { location.hash = '#/'; return; }
     if (V.scanStop) V.scanStop();
     renderChrome(entry.path);
@@ -85,7 +97,7 @@
     var root = $('#main');
     try { V[entry.view](root, r.params); }
     catch (e) { root.innerHTML = '<div class="panel"><h2>Qualcosa è andato storto</h2><p class="sub">' + esc(e.message) + '</p><button type="button" class="btn" data-act="goto" data-id="">Torna al banco</button></div>'; if (window.console) console.error(e); }
-    document.title = (entry.path ? entry.label + ' - ' : '') + 'NexMet Magazzino';
+    document.title = (entry.path ? (entry.group ? entry.group + ': ' : '') + entry.label + ' - ' : '') + 'NexMet Magazzino';
     if (entry.path !== lastPath) { window.scrollTo(0, 0); lastPath = entry.path; }
   };
 
@@ -108,6 +120,8 @@
     { label: 'Vai al margine', run: function () { NM.go('margine'); } },
     { label: 'Vai alla rubrica', run: function () { NM.go('rubrica'); } },
     { label: 'Stampa etichette', run: function () { NM.go('etichette'); } },
+    { label: 'Tabelle: tipi di articolo', run: function () { NM.go('tabelle/tipo'); } },
+    { label: 'Tabelle: posizioni di magazzino', run: function () { NM.go('tabelle/posizioni'); } },
     { label: 'Esporta in Excel', run: function () { NM.act['export-xlsx'](); } },
     { label: 'Scarica il backup', run: function () { NM.act['backup-json'](); } }
   ];

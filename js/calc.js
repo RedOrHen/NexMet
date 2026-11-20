@@ -7,6 +7,32 @@
 
   C.STATI = ['Da verificare', 'Funzionante', 'Difettoso', 'Per macero (a peso)'];
   C.TIPI = ['RAM', 'Disco', 'CPU', 'Scheda madre', 'Scheda', 'Alimentatore', 'Altro'];
+  /* Elenchi del menu Tabelle. Se la tabella Tipo è vuota vale l'elenco predefinito qui sopra. */
+  function sortedNames(list) {
+    return list.map(function (x) { return String(x.nome || '').trim(); }).filter(Boolean)
+      .sort(function (a, b) { return a.localeCompare(b, 'it', { numeric: true, sensitivity: 'base' }); });
+  }
+  // i tipi restano nell'ordine in cui sono stati inseriti (RAM, Disco, ... e poi i nuovi)
+  C.tipi = function () {
+    var l = NM.data.state.tipi.map(function (x) { return String(x.nome || '').trim(); }).filter(Boolean);
+    return l.length ? l : C.TIPI.slice();
+  };
+  C.posizioni = function () { return sortedNames(NM.data.state.posizioni); };
+  // valori usati dai pezzi ma assenti dalla tabella (ad esempio dati vecchi o importati)
+  C.nonInElenco = function (field) {
+    var table = field === 'tipo' ? C.tipi() : C.posizioni(), have = {}, out = {};
+    table.forEach(function (n) { have[U.norm(n)] = 1; });
+    NM.data.state.pezzi.forEach(function (p) {
+      var v = String(p[field] || '').trim();
+      if (v && !have[U.norm(v)]) out[U.norm(v)] = v;
+    });
+    return Object.keys(out).map(function (k) { return out[k]; }).sort(function (a, b) { return a.localeCompare(b, 'it', { numeric: true }); });
+  };
+  // elenco della tabella più il valore già scelto, se non c'è più (così modificare un pezzo non lo perde)
+  C.conValore = function (names, cur) {
+    var c = String(cur || '').trim();
+    return c && !names.some(function (n) { return U.norm(n) === U.norm(c); }) ? names.concat([c]) : names;
+  };
   C.FASI = ['Da verificare', 'Verificato', 'Cancellato', 'Certificato inviato', 'Vendibile'];
   C.SPEDIZIONI = ['Da spedire', 'Spedito', 'Consegnato', 'Ritiro in sede'];
 

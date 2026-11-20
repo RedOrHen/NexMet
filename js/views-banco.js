@@ -167,7 +167,7 @@
       (UI.canEdit() ? '<button type="button" class="btn primary" data-act="pezzo-new">' + UI.icon('plus') + 'Nuovo pezzo</button><button type="button" class="btn" data-act="carico-open">Carica un lotto</button>' : '') +
       '</div></div>' +
       '<div class="toolbar" style="margin-bottom:10px"><input id="pezzQ" type="search" placeholder="Cerca per nome, codice, posizione" value="' + esc(F.q) + '" aria-label="Cerca">' +
-      '<select id="pezzTipo" aria-label="Tipo"><option value="">Tutti i tipi</option>' + C.TIPI.map(function (t) { return '<option' + (F.tipo === t ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select>' +
+      '<select id="pezzTipo" aria-label="Tipo"><option value="">Tutti i tipi</option>' + C.tipi().concat(C.nonInElenco('tipo')).map(function (t) { return '<option' + (F.tipo === t ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select>' +
       '<select id="pezzLotto" aria-label="Lotto"><option value="">Tutti i lotti</option>' + D.state.lotti.map(function (l) { return '<option value="' + esc(l.id) + '"' + (F.lotto === l.id ? ' selected' : '') + '>' + esc(l.nome) + '</option>'; }).join('') + '</select>' +
       '<select id="pezzSort" aria-label="Ordine">' + [['recenti', 'Più recenti'], ['nome', 'Nome'], ['posizione', 'Posizione'], ['giacenza', 'Giacenza']].map(function (o) { return '<option value="' + o[0] + '"' + (F.sort === o[0] ? ' selected' : '') + '>Ordina: ' + o[1] + '</option>'; }).join('') + '</select></div>' +
       '<div class="filters" id="pezzFilters" style="margin-bottom:12px"></div><div id="bulkBox"></div><div id="pezzTable"></div>';
@@ -200,7 +200,7 @@
   };
   A['bulk-pos'] = function () {
     if (!UI.guardEdit()) return;
-    UI.form('Sposta ' + selCount() + ' pezzi', [{ key: 'posizione', label: 'Nuova posizione', required: true, list: 'posList', hint: 'Es. Scaffale A - Scatola 3' }], {}, function (v) {
+    UI.form('Sposta ' + selCount() + ' pezzi', [posizioneField('', { label: 'Nuova posizione', required: true })], {}, function (v) {
       var ids = Object.keys(SEL);
       ids.forEach(function (id) { var p = C.pezzo(id); if (p) D.put('pezzi', Object.assign({}, p, { posizione: v.posizione })); });
       D.log('ha spostato in "' + v.posizione + '"', 'pezzi', '', ids.length + ' pezzi');
@@ -218,10 +218,22 @@
   };
 
   /* ---------- Modulo pezzo ---------- */
-  function pezzoFields() {
+  /* Campo "posizione": scelta tra quelle della tabella Posizioni; se la tabella è vuota resta il testo libero */
+  function posizioneField(cur, o) {
+    o = o || {};
+    var names = C.posizioni();
+    if (!names.length) {
+      return { key: 'posizione', label: o.label || 'Posizione di magazzino', list: 'posList', full: true, required: o.required, hint: 'Nessuna posizione nella tabella: scrivila a mano o aggiungile in Tabelle > Posizioni.' };
+    }
+    return { key: 'posizione', label: o.label || 'Posizione di magazzino', type: 'select', full: true, required: o.required,
+      options: [['', o.required ? '— scegli una posizione —' : '— da assegnare —']].concat(C.conValore(names, cur).map(function (n) { return [n, n]; })),
+      hint: 'L’elenco si gestisce in Tabelle > Posizioni.' };
+  }
+  function pezzoFields(cur) {
+    cur = cur || {};
     return [
       { key: 'nome', label: 'Nome', required: true, full: true, hint: 'Es. RAM DDR3 8GB' },
-      { key: 'tipo', label: 'Tipo', type: 'select', options: C.TIPI },
+      { key: 'tipo', label: 'Tipo', type: 'select', options: C.conValore(C.tipi(), cur.tipo), hint: 'L’elenco si gestisce in Tabelle > Tipo.' },
       { key: 'quantita', label: 'Quantità', type: 'number', required: true, def: 1, step: 1 },
       { key: 'marca', label: 'Marca' },
       { key: 'modello', label: 'Modello' },
@@ -229,7 +241,7 @@
       { key: 'capacita', label: 'Capacità', hint: 'Es. 8 GB, 500 GB' },
       { key: 'stato', label: 'Stato', type: 'select', options: C.STATI },
       { key: 'peso', label: 'Peso totale (g)', type: 'number', hint: 'Serve per le vendite a peso' },
-      { key: 'posizione', label: 'Posizione di magazzino', list: 'posList', full: true, hint: 'Es. Scaffale A - Scatola 3' },
+      posizioneField(cur.posizione),
       { key: 'lottoId', label: 'Lotto di origine', type: 'select', full: true, options: [['', '— nessuno —']].concat(D.state.lotti.map(function (l) { return [l.id, l.nome]; })) },
       { key: 'test', label: 'Test', full: true, hint: 'Esito o note. Il metodo di test è ancora da definire.' },
       { key: 'miniatura', label: 'Miniatura', type: 'foto', full: true, hint: 'Una copia piccola per riconoscere il pezzo. La foto piena resta sul PC.' },
@@ -246,7 +258,7 @@
   }
   V.pezzoNew = function (preset) {
     if (!UI.guardEdit()) return;
-    UI.form('Nuovo pezzo', pezzoFields(), Object.assign({ stato: C.STATI[0], tipo: 'Altro', fase: C.FASI[0] }, preset || {}), function (v) {
+    UI.form('Nuovo pezzo', pezzoFields(preset), Object.assign({ stato: C.STATI[0], tipo: 'Altro', fase: C.FASI[0] }, preset || {}), function (v) {
       var code;
       try { code = D.nextCode(); } catch (e) { UI.toast(e.message); return false; }
       var p = Object.assign({ id: U.uid(), codice: code, creato: Date.now() }, v);
@@ -258,7 +270,7 @@
   V.pezzoEdit = function (id) {
     if (!UI.guardEdit()) return;
     var p = C.pezzo(id); if (!p) return;
-    UI.form('Modifica ' + p.codice, pezzoFields(), p, function (v) {
+    UI.form('Modifica ' + p.codice, pezzoFields(p), p, function (v) {
       if (U.n(v.quantita) < C.sold(p)) { UI.toast('La quantità non può essere inferiore a quella già venduta (' + C.sold(p) + ').'); return false; }
       D.put('pezzi', Object.assign({}, p, v));
       D.log('ha modificato', 'pezzi', p.id, p.nome + ' (' + p.codice + ')');
@@ -369,12 +381,16 @@
   var caricoLast = null;
   function caricoRow(v) {
     v = v || {};
-    return '<tr><td><select data-f="tipo" aria-label="Tipo">' + C.TIPI.map(function (t) { return '<option' + (v.tipo === t ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select></td>' +
+    var posNames = C.posizioni();
+    var posCell = posNames.length
+      ? '<select data-f="posizione" aria-label="Posizione"><option value="">— da assegnare —</option>' + C.conValore(posNames, v.posizione).map(function (n) { return '<option' + (v.posizione === n ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select>'
+      : '<input data-f="posizione" list="posList" value="' + esc(v.posizione || '') + '" placeholder="Scaffale - Scatola" aria-label="Posizione">';
+    return '<tr><td><select data-f="tipo" aria-label="Tipo">' + C.conValore(C.tipi(), v.tipo).map(function (t) { return '<option' + (v.tipo === t ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select></td>' +
       '<td><input data-f="nome" value="' + esc(v.nome || '') + '" placeholder="Es. RAM DDR3 8GB" aria-label="Nome"></td>' +
       '<td><input class="q" data-f="quantita" type="number" min="1" step="1" value="' + esc(v.quantita || 1) + '" aria-label="Quantità"></td>' +
       '<td><input class="w" data-f="peso" type="number" min="0" step="any" value="' + esc(v.peso == null ? '' : v.peso) + '" aria-label="Peso in grammi"></td>' +
       '<td><select data-f="stato" aria-label="Stato">' + C.STATI.map(function (t) { return '<option' + (v.stato === t ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select></td>' +
-      '<td><input data-f="posizione" list="posList" value="' + esc(v.posizione || '') + '" placeholder="Scaffale - Scatola" aria-label="Posizione"></td>' +
+      '<td>' + posCell + '</td>' +
       '<td class="rowfoto"><span class="fotoprev">' + UI.thumb({ miniatura: v.miniatura, tipo: '+' }) + '</span><input data-f="miniatura" type="hidden" value="' + esc(v.miniatura || '') + '">' +
       '<label class="btn sm">Foto<input type="file" accept="image/*" data-rowfoto hidden aria-label="Foto del pezzo"></label></td>' +
       '<td><input data-f="datiSensibili" type="checkbox"' + (v.datiSensibili ? ' checked' : '') + ' aria-label="Può contenere dati"></td>' +

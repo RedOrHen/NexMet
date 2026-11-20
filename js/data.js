@@ -10,9 +10,10 @@
   var LOG_MAX = 500;
   var PAGE = 1000;
   // Ordine di scrittura: prima ciò a cui gli altri fanno riferimento.
-  var STORES = ['anagrafiche', 'lotti', 'pezzi', 'vendite', 'log'];
+  var STORES = ['anagrafiche', 'lotti', 'pezzi', 'vendite', 'log', 'tipi', 'posizioni'];
+  var TABELLE = ['tipi', 'posizioni']; // elenchi del menu Tabelle: il ripristino dei dati non li tocca se la copia non li contiene
 
-  var state = { lotti: [], pezzi: [], anagrafiche: [], vendite: [], log: [], utenti: [], utenteId: '', seq: 0, ultimoBackup: '' };
+  var state = { lotti: [], pezzi: [], anagrafiche: [], vendite: [], log: [], tipi: [], posizioni: [], utenti: [], utenteId: '', seq: 0, ultimoBackup: '' };
   var D = (NM.data = { state: state, version: 0 });
   var client = null, queue = Promise.resolve(), pool = [], lastLoad = 0;
   D.onError = function () {};
@@ -31,7 +32,9 @@
     vendite: [['pezzoId', 'pezzo_id', 'fk'], ['quantita', 'quantita', 'i'], ['ricavo', 'ricavo', 'n0'], ['modo', 'modo', 's0'], ['pesoKg', 'peso_kg', 'n'], ['prezzoKg', 'prezzo_kg', 'n'],
       ['gruppo', 'gruppo', 's'], ['data', 'data', 'd'], ['clienteId', 'cliente_id', 'fk'], ['spedStato', 'sped_stato', 's'], ['spedCorriere', 'sped_corriere', 's'],
       ['spedTracking', 'sped_tracking', 's'], ['spedPaese', 'sped_paese', 's'], ['note', 'note', 's']],
-    log: [['ts', 'ts', 'ts'], ['user', 'utente', 's'], ['action', 'azione', 's'], ['entity', 'entita', 's'], ['refId', 'rif_id', 's'], ['label', 'etichetta', 's']]
+    log: [['ts', 'ts', 'ts'], ['user', 'utente', 's'], ['action', 'azione', 's'], ['entity', 'entita', 's'], ['refId', 'rif_id', 's'], ['label', 'etichetta', 's']],
+    tipi: [['nome', 'nome', 's'], ['note', 'note', 's'], ['creato', 'creato', 'ts']],
+    posizioni: [['nome', 'nome', 's'], ['note', 'note', 's'], ['creato', 'creato', 'ts']]
   };
   function toDb(type, v) {
     switch (type) {
@@ -104,7 +107,7 @@
       return client.auth.signInWithPassword({ email: String(email).trim(), password: password }).then(function (r) { must(r); return r.data.session; });
     },
     signOut: function () {
-      state.lotti = []; state.pezzi = []; state.anagrafiche = []; state.vendite = []; state.log = []; state.utenti = []; state.utenteId = ''; pool = []; D.version++;
+      state.lotti = []; state.pezzi = []; state.anagrafiche = []; state.vendite = []; state.log = []; state.tipi = []; state.posizioni = []; state.utenti = []; state.utenteId = ''; pool = []; D.version++;
       return client.auth.signOut();
     },
     reset: function (email) {
@@ -212,21 +215,24 @@
     return {
       version: 3, exportedAt: new Date().toISOString(),
       lotti: state.lotti, pezzi: state.pezzi, anagrafiche: state.anagrafiche, vendite: state.vendite,
-      log: state.log, seq: state.seq
+      log: state.log, tipi: state.tipi, posizioni: state.posizioni, seq: state.seq
     };
   };
-  function deleteAll() {
-    return ['vendite', 'pezzi', 'lotti', 'anagrafiche', 'log'].reduce(function (p, s) {
+  function deleteAll(withTables) {
+    var list = ['vendite', 'pezzi', 'lotti', 'anagrafiche', 'log'].concat(withTables || []);
+    return list.reduce(function (p, s) {
       return p.then(function () { return client.from(s).delete().neq('id', '__nessuno__').then(must); });
     }, Promise.resolve());
   }
   D.restore = function (snap) {
     var data = {};
     STORES.forEach(function (s) { data[s] = Array.isArray(snap[s]) ? snap[s] : []; });
+    // Tipo e Posizioni cambiano solo se la copia li contiene (le copie vecchie e i dati di esempio no)
+    var tabelle = TABELLE.filter(function (s) { return Array.isArray(snap[s]) && snap[s].length; });
     var maxCode = data.pezzi.reduce(function (m, p) { var k = /^NM-(\d+)$/.exec(p.codice || ''); return k ? Math.max(m, Number(k[1])) : m; }, 0);
     return run(function () {
-      return deleteAll().then(function () {
-        return STORES.reduce(function (p, s) { return p.then(function () { return data[s].length ? upsertRows(s, data[s]) : null; }); }, Promise.resolve());
+      return deleteAll(tabelle).then(function () {
+        return STORES.reduce(function (p, s) { return p.then(function () { return (TABELLE.indexOf(s) !== -1 && tabelle.indexOf(s) === -1) ? null : (data[s].length ? upsertRows(s, data[s]) : null); }); }, Promise.resolve());
       }).then(function () {
         return client.rpc('nx_imposta_codice', { minimo: Math.max(maxCode, U.n(snap.seq)) }).then(must);
       }).then(function () { pool = []; return D.reload(); }).then(function () { return D.reserveCodes(30); });
