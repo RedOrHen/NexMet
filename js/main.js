@@ -52,11 +52,10 @@
         return '<a class="nav" href="#/' + r.path + '"' + (r.path === path ? ' aria-current="page"' : '') + '>' + UI.icon(r.icon) + '<span>' + r.label + '</span>' + (r.path === '' && todo ? '<span class="count" title="Cose da sistemare">' + todo + '</span>' : '') + '</a>';
       }).join('') +
       '<div class="rail-foot"><button type="button" class="btn sm" data-act="palette-open">' + UI.icon('search') + 'Cerca ovunque (Ctrl+K)</button>' +
-      '<label>Utente<select id="userSelect" aria-label="Utente">' + D.state.utenti.map(function (u) {
-        return '<option value="' + esc(u.id) + '"' + (u.id === D.state.utenteId ? ' selected' : '') + '>' + esc(u.nome) + ' (' + ({ admin: 'Admin', modifica: 'Modifica', consulta: 'Consultazione' }[u.ruolo]) + ')</option>';
-      }).join('') + '</select></label>' +
+      '<div class="me"><span>Utente: <b>' + esc(D.user().nome) + '</b> (' + ({ admin: 'Admin', modifica: 'Modifica', consulta: 'Consultazione' }[role]) + ')</span></div>' +
+      '<div class="me"><button type="button" class="btn sm" data-act="refresh">Aggiorna i dati</button><button type="button" class="btn sm" data-act="logout">Esci</button></div>' +
       '<button type="button" class="btn sm ghost" data-act="theme-cycle">Tema: ' + { auto: 'automatico', light: 'chiaro', dark: 'scuro' }[applyTheme()] + '</button>' +
-      '<span>Versione di prova: usa solo dati di esempio.' + (role === 'consulta' ? ' Sei in sola consultazione.' : '') + '</span></div>';
+      '<span>' + (role === 'consulta' ? 'Sei in sola consultazione. ' : '') + 'Dati condivisi, salvati su Supabase.</span></div>';
     var tabs = [ROUTES[0], ROUTES[1], null, ROUTES[3]];
     $('#tabbar').innerHTML = tabs.map(function (r) {
       if (!r) return '<a href="#/scan" class="scan-fab" aria-label="Scansiona"><span class="fab">' + UI.icon('scan') + '</span><span>Scansiona</span></a>';
@@ -69,13 +68,15 @@
         return '<button type="button" class="btn" data-act="goto" data-id="' + r.path + '" style="justify-content:flex-start">' + UI.icon(r.icon) + r.label + '</button>';
       }).join('') + '<button type="button" class="btn" data-act="palette-open" style="justify-content:flex-start">' + UI.icon('search') + 'Cerca ovunque</button>' +
       '<button type="button" class="btn" data-act="theme-cycle" style="justify-content:flex-start">Cambia tema</button>' +
-      '<label class="field" style="margin-top:8px"><span>Utente</span><select id="userSelectM" aria-label="Utente">' + D.state.utenti.map(function (u) { return '<option value="' + esc(u.id) + '"' + (u.id === D.state.utenteId ? ' selected' : '') + '>' + esc(u.nome) + '</option>'; }).join('') + '</select></label></div>' +
+      '<button type="button" class="btn" data-act="refresh" style="justify-content:flex-start">Aggiorna i dati</button>' +
+      '<button type="button" class="btn" data-act="logout" style="justify-content:flex-start">Esci (' + esc(D.user().nome) + ')</button></div>' +
       '<div class="dlg-actions"><button type="button" class="btn primary" data-act="dlg-close">Chiudi</button></div>');
   };
 
   /* ---------- Disegno della schermata ---------- */
   var lastPath = null;
   NM.render = function () {
+    if (document.body.classList.contains('locked')) return;
     var r = NM.route(), entry = ROUTES.filter(function (x) { return x.path === r.path; })[0] || ROUTES[0];
     if (entry.admin && !UI.isAdmin()) { location.hash = '#/'; return; }
     if (V.scanStop) V.scanStop();
@@ -124,10 +125,6 @@
   });
   document.addEventListener('change', function (e) {
     var t = e.target;
-    if (t.id === 'userSelect' || t.id === 'userSelectM') {
-      D.meta('utenteId', t.value); UI.closeDialog(); UI.closeDrawer(); NM.render();
-      UI.toast('Ora sei ' + D.user().nome + '.'); return;
-    }
     var fn = t.dataset && t.dataset.act && NM.change[t.dataset.act];
     if (fn) fn(t);
   });
@@ -144,14 +141,117 @@
   });
   window.addEventListener('hashchange', function () { UI.closeDrawer(); NM.render(); });
 
+  /* ---------- Accesso: schermate ---------- */
+  function lock() { document.body.classList.add('locked'); UI.closeDrawer(); UI.closeDialog(); }
+  function loginShell(inner) {
+    return '<section class="login"><div class="brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>NexMet<small>Magazzino</small></span></div>' + inner + '</section>';
+  }
+  function setMsg(text, kind) { var m = $('#loginMsg'); if (m) { m.textContent = text || ''; m.className = 'msg' + (kind ? ' ' + kind : ''); } }
+  function niceError(e) {
+    var m = String((e && e.message) || e || '');
+    if (/invalid login credentials/i.test(m)) return 'Email o password non corrette.';
+    if (/email not confirmed/i.test(m)) return 'Devi prima confermare l’email: controlla la posta.';
+    if (/rate limit|too many/i.test(m)) return 'Troppi tentativi: aspetta qualche minuto e riprova.';
+    if (/failed to fetch|network|load failed/i.test(m)) return 'Non riesco a collegarmi: controlla la connessione.';
+    return 'Non riesco ad accedere: ' + m;
+  }
+  V.login = function (message, kind) {
+    lock();
+    $('#main').innerHTML = loginShell('<h1>Accedi al magazzino</h1><p class="sub">Accesso riservato. Entra con la tua email e la tua password.</p>' +
+      '<form id="loginForm" novalidate><label class="field"><span>Email</span><input name="email" type="email" autocomplete="username" required></label>' +
+      '<label class="field"><span>Password</span><input name="password" type="password" autocomplete="current-password" required></label>' +
+      '<p class="msg" id="loginMsg" role="alert"></p><button type="submit" class="btn primary">Entra</button></form>' +
+      '<p class="foot"><button type="button" class="link" data-act="forgot">Password dimenticata?</button></p>');
+    setMsg(message, kind);
+    var f = $('#loginForm');
+    f.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var email = f.elements.email.value.trim(), pw = f.elements.password.value;
+      if (!email || !pw) { setMsg('Scrivi email e password.', 'err'); return; }
+      var btn = f.querySelector('button[type=submit]'); btn.disabled = true; setMsg('Controllo…');
+      D.auth.signIn(email, pw).then(function (session) { handleSession(session); })
+        .catch(function (err) { btn.disabled = false; f.elements.password.value = ''; setMsg(niceError(err), 'err'); });
+    });
+    var first = f.elements.email; if (first && !('ontouchstart' in window)) first.focus();
+  };
+  V.denied = function () {
+    lock();
+    $('#main').innerHTML = loginShell('<h1>Accesso non autorizzato</h1><p class="sub">Hai fatto l’accesso, ma questa utenza non è nell’elenco di chi può usare il magazzino. Chiedi a Redi di aggiungerti.</p>' +
+      '<form><button type="button" class="btn primary" data-act="logout">Esci</button></form>');
+  };
+  V.recovery = function () {
+    lock();
+    $('#main').innerHTML = loginShell('<h1>Scegli una nuova password</h1><p class="sub">Almeno 8 caratteri.</p>' +
+      '<form id="pwForm" novalidate><label class="field"><span>Nuova password</span><input name="pw" type="password" autocomplete="new-password" required></label>' +
+      '<p class="msg" id="loginMsg" role="alert"></p><button type="submit" class="btn primary">Salva la password</button></form>');
+    var f = $('#pwForm');
+    f.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var pw = f.elements.pw.value;
+      if (pw.length < 8) { setMsg('La password deve avere almeno 8 caratteri.', 'err'); return; }
+      D.auth.setPassword(pw).then(function () { return D.auth.start().then(function (s) { location.hash = '#/'; handleSession(s); }); })
+        .catch(function (err) { setMsg(niceError(err), 'err'); });
+    });
+  };
+  function showLoading(text) { lock(); $('#main').innerHTML = loginShell('<h1>' + esc(text) + '</h1><p class="sub">Un momento…</p>'); }
+  function showFailure(e) {
+    lock();
+    $('#main').innerHTML = loginShell('<h1>Non riesco a collegarmi</h1><p class="sub">' + esc(niceError(e)) + '</p><form><button type="button" class="btn primary" data-act="retry">Riprova</button></form>');
+  }
+  function handleSession(session) {
+    if (!session) { V.login(); return; }
+    showLoading('Controllo i permessi');
+    D.enter(session).then(function (r) {
+      if (!r.ok) { V.denied(); return; }
+      document.body.classList.remove('locked');
+      NM.render();
+      if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+        navigator.serviceWorker.register('sw.js').catch(function () { /* l'app funziona anche senza */ });
+      }
+    }).catch(showFailure);
+  }
+  A['forgot'] = function () {
+    var email = ($('#loginForm') && $('#loginForm').elements.email.value || '').trim();
+    if (!email) { setMsg('Scrivi la tua email qui sopra, poi clicca di nuovo "Password dimenticata?".', 'err'); return; }
+    setMsg('Invio…');
+    D.auth.reset(email).then(function () { setMsg('Se l’email è tra quelle autorizzate, ti arriva un messaggio con il link per scegliere una nuova password.', 'ok'); })
+      .catch(function (err) { setMsg(niceError(err), 'err'); });
+  };
+  A['logout'] = function () { UI.closeDialog(); D.auth.signOut().then(function () { location.hash = '#/'; V.login('Sei uscito.', 'ok'); }).catch(function () { V.login(); }); };
+  A['retry'] = function () { start(); };
+  A['refresh'] = function () {
+    UI.closeDialog();
+    D.reload().then(function () { NM.render(); UI.toast('Dati aggiornati.'); }).catch(function (e) { UI.toast(niceError(e)); });
+  };
+
   /* ---------- Avvio ---------- */
-  D.onError = function () { UI.toast('Non riesco a salvare: scarica subito un backup dalla pagina Dati.'); };
-  applyTheme();
-  $('#main').innerHTML = '<p class="muted" style="padding:40px 0">Apro il magazzino…</p>';
-  D.init().then(function () {
-    NM.render();
-    if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
-      navigator.serviceWorker.register('sw.js').catch(function () { /* l'app funziona anche senza */ });
-    }
+  D.onError = function (e) {
+    var m = String((e && e.message) || e || '');
+    UI.toast(/row-level security|permission denied|42501/i.test(m) ? 'Il tuo ruolo non permette questa modifica: ricarico i dati.' : 'Non sono riuscito a salvare (' + m + '): ricarico i dati.');
+    D.reload().then(function () { if (!document.body.classList.contains('locked')) NM.render(); }).catch(function () { /* senza rete: resta com'è */ });
+  };
+  // Ricarica i dati quando si torna sulla scheda, se nessuno sta scrivendo.
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState !== 'visible' || document.body.classList.contains('locked') || !D.user().id) return;
+    if (Date.now() - D.lastLoad() < 20000) return;
+    var busy = $('#dlg').open || $('#palette').open || UI.drawerOpen() || typing({ target: document.activeElement });
+    D.reload().then(function () { if (!busy) NM.render(); }).catch(function () { /* senza rete: resta com'è */ });
   });
+  function start() {
+    applyTheme();
+    lock();
+    $('#main').innerHTML = loginShell('<h1>Apro il magazzino</h1><p class="sub">Un momento…</p>');
+    if (!D.configured()) { $('#main').innerHTML = loginShell('<h1>Collegamento mancante</h1><p class="sub">Il collegamento al database non è raggiungibile. Controlla la connessione e ricarica la pagina.</p>'); return; }
+    D.auth.start().then(function (session) {
+      if (!start.listening) {
+        start.listening = true;
+        D.auth.onChange(function (event) {
+          if (event === 'SIGNED_OUT') V.login();
+          else if (event === 'PASSWORD_RECOVERY') V.recovery();
+        });
+      }
+      handleSession(session);
+    }).catch(showFailure);
+  }
+  start();
 })();

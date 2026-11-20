@@ -254,7 +254,9 @@
   V.pezzoNew = function (preset) {
     if (!UI.guardEdit()) return;
     UI.form('Nuovo pezzo', pezzoFields(), Object.assign({ stato: C.STATI[0], tipo: 'Altro', fase: C.FASI[0] }, preset || {}), function (v) {
-      var p = Object.assign({ id: U.uid(), codice: D.nextCode(), creato: Date.now() }, v);
+      var code;
+      try { code = D.nextCode(); } catch (e) { UI.toast(e.message); return false; }
+      var p = Object.assign({ id: U.uid(), codice: code, creato: Date.now() }, v);
       D.put('pezzi', p);
       D.log('ha aggiunto', 'pezzi', p.id, p.nome + ' (' + p.codice + ')');
       V.refreshPosList(); NM.render(); UI.toast('Pezzo aggiunto: ' + p.codice);
@@ -421,6 +423,8 @@
       var lot = UI.readFields(form, fields);
       var rows = U.$$('#caricoRows tr', form).map(readRow).filter(function (r) { return r.nome; });
       if (!rows.length) { UI.toast('Aggiungi almeno un pezzo con un nome.'); return; }
+      var btnSave = form.querySelector('button[type=submit]'); btnSave.disabled = true;
+      D.reserveCodes(rows.length).then(function () {
       var l = Object.assign({ id: U.uid() }, lot);
       D.put('lotti', l);
       rows.forEach(function (r) {
@@ -434,6 +438,7 @@
       UI.closeDialog(); V.refreshPosList();
       F.q = ''; F.stati = []; F.tipo = ''; F.lotto = l.id; F.senzaPos = F.senzaPrezzo = F.dati = false;
       NM.go('pezzi'); UI.toast('Lotto salvato con ' + rows.length + ' tipi di pezzo.');
+      }).catch(function (e) { btnSave.disabled = false; UI.toast('Non riesco a riservare i codici: ' + (e && e.message)); });
     };
     var firstIn = form.querySelector('input'); if (firstIn && !('ontouchstart' in window)) firstIn.focus();
   };

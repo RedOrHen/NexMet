@@ -100,6 +100,10 @@
   }
   A['csv-confirm'] = function () {
     if (!csvPending || !UI.guardEdit()) return;
+    UI.toast('Importo…');
+    D.reserveCodes(csvPending.length).then(doCsvImport).catch(function (e) { UI.toast('Importazione non riuscita: ' + (e && e.message)); });
+  };
+  function doCsvImport() {
     var made = 0, lots = {};
     D.state.lotti.forEach(function (l) { lots[U.norm(l.nome)] = l; });
     csvPending.forEach(function (r) {
@@ -114,7 +118,7 @@
     });
     D.log('ha importato da CSV', 'pezzi', '', made + ' pezzi'); csvPending = null; UI.closeDialog();
     NM.views.refreshPosList(); NM.go('pezzi'); UI.toast('Importati ' + made + ' pezzi.');
-  };
+  }
 
   /* ---------- Importazione di copie complete ---------- */
   function importBackup(file) {
@@ -123,7 +127,9 @@
       var d; try { d = JSON.parse(text); } catch (e) { d = null; }
       if (!d || !Array.isArray(d.pezzi) || !Array.isArray(d.lotti)) { UI.toast('Il file non è un backup valido.'); return; }
       if (!confirm('Sostituire tutti i dati attuali con quelli del backup (' + d.pezzi.length + ' pezzi, ' + d.lotti.length + ' lotti)?')) return;
-      D.restore(d).then(function () { D.log('ha ripristinato un backup', 'dati', '', ''); NM.render(); UI.toast('Backup ripristinato.'); });
+      UI.toast('Ripristino in corso…');
+      D.restore(d).then(function () { D.log('ha ripristinato un backup', 'dati', '', ''); NM.render(); UI.toast('Backup ripristinato.'); })
+        .catch(function (e) { UI.toast('Ripristino non riuscito: ' + (e && e.message)); });
     });
   }
   A['import-v1'] = function () {
@@ -142,7 +148,7 @@
     var l2 = { id: id(), nome: 'Lotto schede miste (esempio)', fonte: 'Sito di prova', data: U.today(), costo: 120, fornitoreId: '', ripartizione: 'quantita', note: '' };
     var l3 = { id: id(), nome: 'Lotto portatili guasti (esempio)', fonte: 'Asta di prova', data: U.today(), costo: 90, fornitoreId: '', ripartizione: 'valore', note: '' };
     var base = { marca: '', modello: '', codiceProdotto: '', capacita: '', test: '', fotoPercorso: '', prezzoRif: '', prezzoIA: '', prezzoFinale: '', datiSensibili: false, fase: C.FASI[0], certificato: '', note: '', peso: '', posizione: '' };
-    var mk = function (o) { return Object.assign({ id: id(), codice: code(), creato: now - (n * 60000) }, base, o); };
+    var mk = function (o) { return Object.assign({ id: id(), codice: code(), creato: now - ((10 - n) * 60000) }, base, o); };
     var pezzi = [
       mk({ nome: 'RAM DDR3 8GB (esempio)', tipo: 'RAM', marca: 'Esempio', modello: 'DDR3-1600', capacita: '8 GB', quantita: 20, stato: 'Funzionante', posizione: 'Scaffale A - Scatola 1', lottoId: l1.id, peso: 400, prezzoRif: 9, prezzoIA: 8, prezzoFinale: 8.5 }),
       mk({ nome: 'RAM DDR2 per macero (esempio)', tipo: 'RAM', marca: 'Varie', modello: 'DDR2', capacita: '1-2 GB', quantita: 60, stato: 'Per macero (a peso)', posizione: 'Scaffale B - Scatola 2', lottoId: l1.id, peso: 1800, prezzoRif: 0.3, prezzoFinale: 0.3 }),
@@ -162,41 +168,38 @@
   }
   A['demo-load'] = function () {
     if (!UI.guardAdmin()) return;
-    if ((D.state.pezzi.length || D.state.lotti.length) && !confirm('I dati attuali verranno sostituiti da quelli di esempio. Continuare?')) return;
-    D.restore(demoSnapshot(), { keepUsers: true }).then(function () { D.log('ha caricato', 'dati', '', 'i dati di esempio'); NM.views.refreshPosList(); NM.go(''); UI.toast('Dati di esempio caricati.'); });
+    if (!confirm('ATTENZIONE: i dati del magazzino, che sono condivisi con tutti gli utenti, verranno SOSTITUITI da dati di esempio. Continuare?')) return;
+    UI.toast('Carico i dati di esempio…');
+    D.restore(demoSnapshot()).then(function () { D.log('ha caricato', 'dati', '', 'i dati di esempio'); NM.views.refreshPosList(); NM.go(''); UI.toast('Dati di esempio caricati.'); })
+      .catch(function (e) { UI.toast('Non riesco: ' + (e && e.message)); });
   };
   A['wipe'] = function () {
     if (!UI.guardAdmin()) return;
-    if (!confirm('Cancellare TUTTI i dati di questo browser? Non si può annullare: scarica prima un backup.')) return;
-    D.wipe().then(function () { NM.go(''); UI.toast('Dati cancellati.'); });
+    if (!confirm('Cancellare TUTTI i dati del magazzino per tutti gli utenti? Non si può annullare: scarica prima un backup.')) return;
+    D.wipe().then(function () { NM.go(''); UI.toast('Dati cancellati.'); }).catch(function (e) { UI.toast('Non riesco: ' + (e && e.message)); });
   };
 
   /* ---------- Pagina Dati ---------- */
   V.dati = function (root) {
     var admin = UI.isAdmin(), edit = UI.canEdit();
     root.innerHTML = '<div class="page-head"><div><h1>Dati e backup</h1><p class="sub">Esporta per il commercialista, copia i dati al sicuro, importa un elenco.</p></div></div>' +
-      '<div class="note warn">I dati stanno <b>solo in questo browser</b>: non vengono condivisi con altri dispositivi e si perdono se pulisci i dati del sito. Scarica un backup ogni tanto. Finché il sito è pubblico non inserire dati reali.</div>' +
+      '<div class="note">I dati sono salvati su <b>Supabase</b> (in Europa) e li vedono e li modificano solo le persone autorizzate, ciascuna in base al proprio ruolo. Il piano gratuito non fa backup automatici: scarica ogni tanto la copia completa.</div>' +
       '<div class="panel"><h2>Esporta</h2><p class="sub">L’inventario in Excel (con lotti e vendite) è pensato per il commercialista: le colonne che gli servono vanno ancora chiarite con lui.</p>' +
       '<div class="toolbar"><button type="button" class="btn primary" data-act="export-xlsx">Esporta inventario in Excel</button><button type="button" class="btn" data-act="backup-json">Scarica il backup completo</button></div>' +
       '<p class="sub" style="margin-top:10px">Ultimo backup: ' + (D.state.ultimoBackup ? U.ftime(new Date(D.state.ultimoBackup).getTime()) : 'mai') + '</p></div>' +
       '<div class="panel"><h2>Importa</h2>' + (edit ? '<div class="toolbar" style="margin-bottom:10px"><label class="btn">Importa pezzi da CSV<input id="csvFile" type="file" accept=".csv,text/csv" hidden></label><button type="button" class="btn ghost" data-act="csv-template">Scarica il modello CSV</button></div>' : '<p class="sub">Con il tuo ruolo puoi solo consultare.</p>') +
       (admin ? '<div class="toolbar"><label class="btn">Ripristina un backup<input id="jsonFile" type="file" accept="application/json,.json" hidden></label>' + (D.hasV1() ? '<button type="button" class="btn" data-act="import-v1">Importa i dati del prototipo (v1)</button>' : '') + '</div>' : '') + '</div>' +
-      '<div class="panel"><h2>Archivio</h2><p id="storeInfo" class="sub">Controllo lo spazio…</p>' +
+      '<div class="panel"><h2>Archivio</h2><p id="storeInfo" class="sub">Nel database ci sono ' + D.state.pezzi.length + ' tipi di pezzo, ' + D.state.lotti.length + ' lotti, ' + D.state.vendite.length + ' vendite e ' + D.state.anagrafiche.length + ' schede in rubrica. Ultimo caricamento dal database: ' + U.ftime(D.lastLoad()) + '.</p>' +
       (admin ? '<div class="toolbar" style="margin-top:10px"><button type="button" class="btn" data-act="demo-load">Carica dati di esempio</button><button type="button" class="btn danger" data-act="wipe">Cancella tutti i dati</button></div>' : '<p class="sub">Solo l’Admin può caricare dati di esempio o cancellare.</p>') + '</div>';
     var csv = $('#csvFile'); if (csv) csv.addEventListener('change', function (e) { if (e.target.files[0]) csvPreview(e.target.files[0]); e.target.value = ''; });
     var js = $('#jsonFile'); if (js) js.addEventListener('change', function (e) { if (e.target.files[0]) importBackup(e.target.files[0]); e.target.value = ''; });
-    D.estimate().then(function (e) {
-      var el = $('#storeInfo'); if (!el) return;
-      var how = D.mode() === 'idb' ? 'archivio del browser (IndexedDB)' : 'archivio di riserva (localStorage)';
-      el.textContent = 'Dati salvati nell’' + how + '. ' + (e && e.usage != null ? 'Spazio usato: ' + (e.usage / 1048576).toFixed(1) + ' MB.' : '') + ' ' + D.state.pezzi.length + ' tipi di pezzo, ' + D.state.lotti.length + ' lotti, ' + D.state.vendite.length + ' vendite.';
-    });
   };
 
   /* ---------- Admin ---------- */
   var RUOLI = { admin: 'Admin', modifica: 'Modifica', consulta: 'Consultazione' };
   V.admin = function (root) {
-    root.innerHTML = '<div class="page-head"><div><h1>Admin</h1><p class="sub">Chi può solo consultare e chi può anche modificare.</p></div><div class="toolbar"><button type="button" class="btn primary" data-act="user-new">' + UI.icon('plus') + 'Nuovo utente</button></div></div>' +
-      '<div class="note warn">Questa è una simulazione: chiunque apra il sito può scegliere il proprio utente nel menu a sinistra, quindi i ruoli <b>non proteggono nulla</b>. Servono per vedere come funzioneranno. Il login vero arriverà con il passaggio a un archivio con database.</div>' +
+    root.innerHTML = '<div class="page-head"><div><h1>Admin</h1><p class="sub">Chi può solo consultare e chi può anche modificare.</p></div><div class="toolbar"><button type="button" class="btn primary" data-act="user-new">' + UI.icon('plus') + 'Autorizza un utente</button></div></div>' +
+      '<div class="note">I ruoli sono controllati dal database, non solo dalla pagina: chi è in sola consultazione non può modificare nulla nemmeno aggirando il sito. Per far entrare una nuova persona: 1) crea la sua utenza in Supabase (Authentication, poi Users), 2) copia il suo identificativo (User UID), 3) usa "Autorizza un utente" qui. Chi non è in questo elenco non vede niente.</div>' +
       '<div class="panel"><p><b>Admin</b>: fa tutto e gestisce gli utenti. <b>Modifica</b>: inserisce e modifica i dati. <b>Consultazione</b>: può solo vedere.</p></div>' +
       UI.table([
         { h: 'Utente', f: function (u) { return esc(u.nome) + (u.id === D.state.utenteId ? ' <span class="chip" data-tone="grey">tu</span>' : ''); } },
@@ -208,12 +211,19 @@
     var u = D.state.utenti.filter(function (x) { return x.id === el.dataset.id; })[0]; if (!u) return;
     var admins = D.state.utenti.filter(function (x) { return x.ruolo === 'admin'; }).length;
     if (u.ruolo === 'admin' && el.value !== 'admin' && admins < 2) { UI.toast('Deve restare almeno un Admin.'); NM.render(); return; }
-    u.ruolo = el.value; D.meta('utenti', D.state.utenti); D.log('ha cambiato il ruolo di ' + u.nome + ' in', 'utenti', '', RUOLI[u.ruolo]); NM.render(); UI.toast('Ruolo aggiornato');
+    D.setRole(u.id, el.value).then(function () { D.log('ha cambiato il ruolo di ' + u.nome + ' in', 'utenti', '', RUOLI[el.value]); NM.render(); UI.toast('Ruolo aggiornato'); })
+      .catch(function (e) { UI.toast('Non riesco: ' + (e && e.message)); NM.render(); });
   };
   A['user-new'] = function () {
     if (!UI.guardAdmin()) return;
-    UI.form('Nuovo utente', [{ key: 'nome', label: 'Nome', required: true }, { key: 'ruolo', label: 'Ruolo', type: 'select', options: Object.keys(RUOLI).map(function (k) { return [k, RUOLI[k]]; }), def: 'consulta' }], {}, function (v) {
-      D.state.utenti.push({ id: U.uid(), nome: v.nome, ruolo: v.ruolo }); D.meta('utenti', D.state.utenti); D.log('ha aggiunto l’utente', 'utenti', '', v.nome); NM.render(); UI.toast('Utente aggiunto');
+    UI.form('Autorizza un utente', [
+      { key: 'userId', label: 'Identificativo (User UID di Supabase)', required: true, full: true, hint: 'Lo trovi in Supabase, sezione Authentication, Users: è una sequenza di lettere e numeri con i trattini.' },
+      { key: 'nome', label: 'Nome', required: true },
+      { key: 'ruolo', label: 'Ruolo', type: 'select', options: Object.keys(RUOLI).map(function (k) { return [k, RUOLI[k]]; }), def: 'consulta' }
+    ], {}, function (v) {
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v.userId)) { UI.toast('L’identificativo non sembra corretto: deve essere come 123e4567-e89b-12d3-a456-426614174000.'); return false; }
+      D.addUser(v.userId.toLowerCase(), v.nome, v.ruolo).then(function () { D.log('ha autorizzato l’utente', 'utenti', '', v.nome); NM.render(); UI.toast('Utente autorizzato'); })
+        .catch(function (e) { UI.toast('Non riesco: ' + (e && e.message)); });
     });
   };
   A['user-del'] = function (el) {
@@ -221,6 +231,7 @@
     var u = D.state.utenti.filter(function (x) { return x.id === el.dataset.id; })[0]; if (!u || u.id === D.state.utenteId) return;
     if (u.ruolo === 'admin' && D.state.utenti.filter(function (x) { return x.ruolo === 'admin'; }).length < 2) { UI.toast('Deve restare almeno un Admin.'); return; }
     if (!confirm('Eliminare l’utente ' + u.nome + '?')) return;
-    D.state.utenti = D.state.utenti.filter(function (x) { return x.id !== u.id; }); D.meta('utenti', D.state.utenti); D.log('ha eliminato l’utente', 'utenti', '', u.nome); NM.render();
+    D.removeUser(u.id).then(function () { D.log('ha tolto l’autorizzazione a', 'utenti', '', u.nome); NM.render(); UI.toast('Autorizzazione tolta'); })
+      .catch(function (e) { UI.toast('Non riesco: ' + (e && e.message)); });
   };
 })();
