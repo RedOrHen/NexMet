@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NexMet Magazzino</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="demo-banner noprint">Prototipo di prova: usa solo dati di esempio. I dati restano in questo browser e i ruoli non sono protetti.</div>
+<header class="topbar noprint">
+  <div class="brand">NexMet <span>Magazzino</span></div>
+  <nav id="nav" aria-label="Sezioni"></nav>
+  <label class="user">Utente
+    <select id="userSelect"></select>
+  </label>
+</header>
+<main id="view"></main>
+<datalist id="posList"></datalist>
+<dialog id="dlg"><form id="dlgForm"></form></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
