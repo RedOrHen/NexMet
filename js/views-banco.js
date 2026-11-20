@@ -39,15 +39,6 @@
         '<span class="res-qty">' + U.num(g) + '<small>di ' + U.num(p.quantita) + '</small></span></button></li>';
     }).join('');
   }
-  function backupNote() {
-    var s = D.state;
-    if (!s.pezzi.length) return '';
-    var last = s.ultimoBackup ? new Date(s.ultimoBackup).getTime() : 0;
-    var days = last ? Math.floor((Date.now() - last) / 86400000) : null;
-    if (days !== null && days < 7) return '';
-    return '<div class="note warn">' + (days === null ? 'Non hai ancora scaricato nessun backup.' : 'L’ultimo backup risale a ' + days + ' giorni fa.') +
-      ' I dati stanno solo in questo browser. <button type="button" class="btn sm" data-act="backup-json">Scarica il backup</button></div>';
-  }
   V.home = function (root) {
     var s = D.state, t = C.totals(), todo = C.todo();
     var bars = s.lotti.map(function (l) { return { l: l, st: C.lottoStats(l) }; })
@@ -55,7 +46,6 @@
     var logs = s.log.slice(-8).reverse();
     var empty = !s.pezzi.length && !s.lotti.length;
     root.innerHTML =
-      backupNote() +
       '<section class="finder"><h1>Dove si trova?</h1>' +
       '<div class="finder-bar"><input id="finderQ" type="search" placeholder="Nome, codice o posizione" autocomplete="off" aria-label="Cerca un pezzo">' +
       '<button type="button" class="btn primary" data-act="scan-open">' + UI.icon('scan') + 'Scansiona</button></div>' +
