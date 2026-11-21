@@ -253,7 +253,8 @@
       { key: 'datiSensibili', label: 'Supporto che può contenere dati (disco, SSD)', type: 'checkbox', full: true },
       { key: 'fase', label: 'Fase del trattamento dati', type: 'select', options: C.FASI, dep: 'datiSensibili' },
       { key: 'certificato', label: 'Riferimento del certificato di cancellazione', dep: 'datiSensibili' },
-      { key: 'note', label: 'Note', type: 'textarea', full: true }
+      { key: 'note', label: 'Note', type: 'textarea', full: true, hint: 'Appunti interni: non vengono pubblicati.' },
+      { key: 'descrizioneAnnuncio', label: 'Descrizione annuncio', type: 'textarea', full: true, hint: 'Il testo da pubblicare nell’annuncio (eBay). Resta separato dalle note interne.' }
     ];
   }
   V.pezzoNew = function (preset) {
@@ -340,6 +341,7 @@
       ];
       if (p.datiSensibili) rows.splice(5, 0, ['Trattamento dati', UI.chip('fase', p.fase || C.FASI[0])], ['Certificato', esc(p.certificato || '—')]);
       if (p.note) rows.push(['Note', esc(p.note)]);
+      if (p.descrizioneAnnuncio) rows.push(['Descrizione annuncio', '<span style="white-space:pre-wrap">' + esc(p.descrizioneAnnuncio) + '</span>']);
       body = '<dl class="detail">' + rows.map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>'; }).join('') + '</dl>';
     }
     UI.drawer(
@@ -452,7 +454,7 @@
         D.put('pezzi', {
           id: U.uid(), codice: D.nextCode(), creato: Date.now(), lottoId: l.id, nome: r.nome, tipo: r.tipo, quantita: Math.max(1, U.n(r.quantita)),
           peso: r.peso === '' ? '' : Number(r.peso), stato: r.stato, posizione: r.posizione, datiSensibili: !!r.datiSensibili, fase: C.FASI[0],
-          marca: '', modello: '', codiceProdotto: '', capacita: '', test: '', fotoPercorso: '', prezzoRif: '', prezzoIA: '', prezzoFinale: '', prezzoIpotetico: '', miniatura: r.miniatura || '', certificato: '', note: ''
+          marca: '', modello: '', codiceProdotto: '', capacita: '', test: '', fotoPercorso: '', prezzoRif: '', prezzoIA: '', prezzoFinale: '', prezzoIpotetico: '', miniatura: r.miniatura || '', certificato: '', note: '', descrizioneAnnuncio: ''
         });
       });
       D.log('ha caricato il lotto', 'lotti', l.id, l.nome + ' con ' + rows.length + ' tipi di pezzo');

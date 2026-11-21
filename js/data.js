@@ -28,7 +28,7 @@
       ['capacita', 'capacita', 's'], ['quantita', 'quantita', 'i'], ['stato', 'stato', 's'], ['peso', 'peso', 'n'], ['test', 'test', 's'], ['posizione', 'posizione', 's'],
       ['lottoId', 'lotto_id', 'fk'], ['fotoPercorso', 'foto_percorso', 's'], ['prezzoRif', 'prezzo_rif', 'n'], ['prezzoIA', 'prezzo_ia', 'n'], ['prezzoFinale', 'prezzo_finale', 'n'],
       ['prezzoIpotetico', 'prezzo_ipotetico', 'n'], ['miniatura', 'miniatura', 's'],
-      ['datiSensibili', 'dati_sensibili', 'b'], ['fase', 'fase', 's'], ['certificato', 'certificato', 's'], ['note', 'note', 's'], ['creato', 'creato', 'ts']],
+      ['datiSensibili', 'dati_sensibili', 'b'], ['fase', 'fase', 's'], ['certificato', 'certificato', 's'], ['note', 'note', 's'], ['descrizioneAnnuncio', 'descrizione_annuncio', 's'], ['creato', 'creato', 'ts']],
     vendite: [['pezzoId', 'pezzo_id', 'fk'], ['quantita', 'quantita', 'i'], ['ricavo', 'ricavo', 'n0'], ['modo', 'modo', 's0'], ['pesoKg', 'peso_kg', 'n'], ['prezzoKg', 'prezzo_kg', 'n'],
       ['gruppo', 'gruppo', 's'], ['data', 'data', 'd'], ['clienteId', 'cliente_id', 'fk'], ['spedStato', 'sped_stato', 's'], ['spedCorriere', 'sped_corriere', 's'],
       ['spedTracking', 'sped_tracking', 's'], ['spedPaese', 'sped_paese', 's'], ['note', 'note', 's']],

@@ -16,7 +16,7 @@
         'Capacità': p.capacita, 'Stato': p.stato, 'Test': p.test, 'Peso totale (g)': p.peso, 'Posizione': p.posizione,
         'Lotto': l ? l.nome : '', 'Quantità iniziale': U.n(p.quantita), 'Giacenza': m.giac,
         'Costo unitario attribuito (€)': l ? Math.round(m.uc * 100) / 100 : '', 'Valore giacenza al costo (€)': l ? Math.round(m.costoGiac * 100) / 100 : '',
-        'Prezzo ipotetico (€)': p.prezzoIpotetico, 'Prezzo finale (€)': p.prezzoFinale, 'Fase dati': p.datiSensibili ? p.fase : '', 'Certificato': p.certificato || ''
+        'Prezzo ipotetico (€)': p.prezzoIpotetico, 'Prezzo finale (€)': p.prezzoFinale, 'Fase dati': p.datiSensibili ? p.fase : '', 'Certificato': p.certificato || '', 'Descrizione annuncio': p.descrizioneAnnuncio || ''
       };
     });
   }
